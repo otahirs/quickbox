@@ -862,6 +862,10 @@ bool EventPlugin::closeEvent()
 	setEventName(QString());
 	QF_SAFE_DELETE(m_eventConfig)
 	//emit eventOpened(eventName()); //comment it till QE can load event with invalid name
+	QList<QFrame *> widgets = qff::MainWindow::frameWork()->findChildren<QFrame *>(QRegularExpression("Widget"));
+	foreach(QFrame * widget, widgets) {
+		QMetaObject::invokeMethod(widget, "reset", Qt::AutoConnection);
+	}
 	return true;
 }
 
