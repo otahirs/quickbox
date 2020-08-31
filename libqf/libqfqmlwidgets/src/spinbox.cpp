@@ -1,5 +1,5 @@
 #include "spinbox.h"
-
+#include <QKeyEvent>
 using namespace qf::qmlwidgets;
 
 SpinBox::SpinBox(QWidget *parent)
@@ -33,4 +33,10 @@ void SpinBox::onValueChanged(int n)
 {
 	saveDataValue();
 	emit dataValueChanged(n);
+}
+
+void SpinBox::keyPressEvent(QKeyEvent * event) {
+	auto nativeScanCode = event->nativeScanCode();
+	QKeyEvent * e = new QKeyEvent(event->type(), event->nativeScanCode(), event->modifiers(), QString(), event->isAutoRepeat(), event->count());
+	Super::keyPressEvent(e);
 }
