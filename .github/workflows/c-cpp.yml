@@ -34,15 +34,17 @@ jobs:
     
     - name: build AppImage
       run: |
+        echo `quickevent-${APP_VERSION}-x86_64-${GITHUB_EVENT_NAME}-${GITHUB_SHA}.AppImage`
         APP_VERSION=`grep APP_VERSION quickevent/app/quickevent/src/appversion.h | cut -d\" -f2`
         mkdir ../build
         ./quickevent/make-dist.sh --src-dir . --app-version ${APP_VERSION} --qt-dir ${Qt5_DIR} --work-dir ../build --appimage-tool /opt/appimagetool-x86_64.AppImage
+        echo $(readlink -f ../build/artifacts/quickevent-${APP_VERSION}-x86_64.AppImage)
         
     - name: save AppImage
       uses: actions/upload-artifact@v2
       with:
         name: quickevent-${APP_VERSION}-x86_64-${GITHUB_EVENT_NAME}-${GITHUB_SHA}.AppImage
-        path: ${readlink -f ../build/artifacts/quickevent-${APP_VERSION}-x86_64.AppImage}
+        path: $(readlink -f ../build/artifacts/quickevent-${APP_VERSION}-x86_64.AppImage)
       
       
   build_windows:
