@@ -79,6 +79,7 @@ jobs:
     - name: find
       run: |
         dir ${{env.PGBIN}}
+      continue-on-error: true
  
     - name: create installer
       run: |
