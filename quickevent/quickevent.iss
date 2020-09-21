@@ -9,7 +9,7 @@
 #define QT_DIR "c:/Qt/5.15.0/mingw81_64"
 ;#define MINGW_DIR "C:\app\qt5.6\Tools\mingw492_32"
 #define SSL_DIR "C:\qt\Tools\OpenSSL\Win_x64"
-#define PSQL_DIR "C:\app\pgsql64"
+;#define PSQL_DIR "C:\app\pgsql64"
 
 #define INCLUDE_QT
 #define BUILD_DIR ".."
@@ -61,11 +61,11 @@ Source: {#SRC_DIR}\quickevent\app\quickevent\datafiles\*; DestDir: {app}\quickev
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
-Source: {#PSQL_DIR}\bin\libpq.dll; DestDir: {app}; Flags: ignoreversion
-Source: {#PSQL_DIR}\bin\libintl-*.dll; DestDir: {app}; Flags: ignoreversion
-Source: {#PSQL_DIR}\bin\libssl*.dll; DestDir: {app}; Flags: ignoreversion
+;Source: {#PSQL_DIR}\bin\libpq.dll; DestDir: {app}; Flags: ignoreversion
+;Source: {#PSQL_DIR}\bin\libintl-*.dll; DestDir: {app}; Flags: ignoreversion
+;Source: {#PSQL_DIR}\bin\libssl*.dll; DestDir: {app}; Flags: ignoreversion
 ;Source: {#PSQL_DIR}\bin\ssleay32.dll; DestDir: {app}; Flags: ignoreversion
-Source: {#PSQL_DIR}\bin\libiconv-*.dll; DestDir: {app}; Flags: ignoreversion
+;Source: {#PSQL_DIR}\bin\libiconv-*.dll; DestDir: {app}; Flags: ignoreversion
 
 ;Source: c:\app\openssl\*.dll; DestDir: {app}; Flags: ignoreversion
 
