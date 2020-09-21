@@ -15,7 +15,7 @@ jobs:
       
     - name: Cache Qt
       id: cache-qt
-      uses: actions/cache@v2
+      uses: actions/cache@v1
       with:
         path: ../Qt
         key: ${{ runner.os }}-QtCache
@@ -56,7 +56,7 @@ jobs:
     
     - name: Cache Qt
       id: cache-qt
-      uses: actions/cache@v2
+      uses: actions/cache@v1
       with:
         path: ../Qt
         key: ${{ runner.os }}-QtCache
@@ -84,6 +84,7 @@ jobs:
         mingw32-make.exe -j4
 
     - name: create installer
+      continue-on-error: true
       run: |
         choco install innosetup --no-progress
         "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=test" "/DQT_DIR=D:/a/quickbox/Qt/5.15.0/mingw81_64" "/DSSL_DIR=C:\msys64\mingw32" quickevent/quickevent.iss
