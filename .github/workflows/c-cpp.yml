@@ -82,9 +82,8 @@ jobs:
   
     - name: test
       run: |
-        sudo find / -name "libpq*dll"
-        sudo find / -name "libcrypto*dll"
-      shell: bash
+        dir /s c:\libpq.dll
+        dir /s c:\libcrypto.dll
  
     - name: find
       run: |
