@@ -40,7 +40,8 @@ jobs:
       if: false
       run: |
         mkdir ./build
-        ./quickevent/make-dist.sh --src-dir . --qt-dir ${Qt5_DIR} --work-dir ./build --appimage-tool /opt/appimagetool-x86_64.AppImage
+        ./quickevent/make-dist.sh --src-dir . --qt-dir ${Qt5_DIR} --work-dir ./build --appimage-tool /opt/appimagetool-x86_64.AppImage 
+      # --lib-dir /usr/lib/x86_64-linux-gnu/
         
     - name: save AppImage
       uses: actions/upload-artifact@v2
@@ -73,24 +74,14 @@ jobs:
         host: 'windows'
         arch: 'win64_mingw81' 
 
-    - name: configure
-      if: false
+    - name: build
       run: |
         qmake.exe quickbox.pro -spec win32-g++ "CONFIG+=release" "CONFIG+=qtquickcompiler" "CONFIG+=force_debug_info" 
         mingw32-make.exe qmake_all
         mingw32-make.exe -j4
-  
-    - name: test
-      run: |
-        dir /s c:\libpq.dll
-        dir /s c:\libcrypto.dll
- 
-    - name: find
-      run: |
-        dir ${{env.PGBIN}}
 
- 
     - name: create installer
       run: |
         choco install innosetup --no-progress
-        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=test" "/DQT_DIR=${Qt5_DIR}" "/DSSL_DIR=C:\msys64\mingw32" "/DPSQL_DIR=${{env.PGBIN}}" quickevent/quickevent.iss
+        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=test" "/DQT_DIR=${Qt5_DIR}" "/DSSL_DIR=C:\msys64\mingw32" quickevent/quickevent.iss
+      # "/DPSQL_DIR=${{env.PGBIN}}"
