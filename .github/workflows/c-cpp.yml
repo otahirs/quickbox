@@ -78,9 +78,9 @@ jobs:
  
     - name: find
       run: |
-        dir ${{PGBIN}}
+        dir ${{env.PGBIN}}
  
     - name: create installer
       run: |
         choco install innosetup --no-progress
-        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=test" "/DQT_DIR=${Qt5_DIR}" "/DSSL_DIR=C:\msys64\mingw32" "/DPSQL_DIR=${{PGBIN}}" quickevent/quickevent.iss
+        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=test" "/DQT_DIR=${Qt5_DIR}" "/DSSL_DIR=C:\msys64\mingw32" "/DPSQL_DIR=${{env.PGBIN}}" quickevent/quickevent.iss
