@@ -82,6 +82,10 @@ jobs:
         mingw32-make.exe qmake_all
         mingw32-make.exe -j4
 
+    - name: test
+      run: |
+        dir ${{env.PGBIN}}
+        dir C:\msys64\mingw32\bin
     - name: create installer
       continue-on-error: true
       run: |
