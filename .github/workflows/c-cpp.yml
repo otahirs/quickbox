@@ -80,7 +80,7 @@ jobs:
 
     - name: find
       run: |
-        where /r C:\Program Files (x86)\ libpq*dll
+        where /r C:\Program Files\PostgreSQL libpq*dll
 
     - name: create installer
       run: |
