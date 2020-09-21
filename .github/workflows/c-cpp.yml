@@ -40,7 +40,7 @@ jobs:
     - name: save AppImage
       uses: actions/upload-artifact@v2
       with:
-        name: quickevent-${{ github.event_name }}-${ github.sha }.AppImage
+        name: quickevent-${{ github.event_name }}-${{ github.sha }}.AppImage
         path: build/artifacts/quickevent-*-x86_64.AppImage
       
       
@@ -74,7 +74,7 @@ jobs:
         mingw32-make.exe qmake_all
  
     - name: make
-      run: mingw32-make.exe
+      run: mingw32-make.exe -j8
     
     - name: create installer
       run: |
