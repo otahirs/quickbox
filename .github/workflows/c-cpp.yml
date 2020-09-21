@@ -8,7 +8,6 @@ on:
 
 jobs:
   build_linux:
-    if: false
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -31,8 +30,14 @@ jobs:
       run: |
         curl --silent "https://api.github.com/repos/AppImage/AppImageKit/releases/latest" | jq -r '.assets[] | select(.name == "appimagetool-x86_64.AppImage").browser_download_url' | sudo xargs curl -L -o /opt/appimagetool-x86_64.AppImage --create-dirs --url
         sudo chmod +x /opt/appimagetool-x86_64.AppImage
+
+    - name: test
+      run: |
+        sudo find / -name libpq.so*
+        sudo find / -name libcrypto.so*
     
     - name: build AppImage
+      if: false
       run: |
         mkdir ./build
         ./quickevent/make-dist.sh --src-dir . --qt-dir ${Qt5_DIR} --work-dir ./build --appimage-tool /opt/appimagetool-x86_64.AppImage
@@ -45,6 +50,7 @@ jobs:
       
       
   build_windows:
+    if: false
     runs-on: windows-latest
     defaults:
       run:
@@ -79,7 +85,7 @@ jobs:
     - name: find
       run: |
         dir ${{env.PGBIN}}
-      continue-on-error: true
+
  
     - name: create installer
       run: |
