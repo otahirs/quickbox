@@ -57,7 +57,7 @@ Source: {#BUILD_DIR}\bin\siut.dll; DestDir: {app}; Flags: ignoreversion
 Source: {#BUILD_DIR}\bin\qml\*; DestDir: {app}\qml; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.debug"
 Source: {#SRC_DIR}\quickevent\app\quickevent\datafiles\*; DestDir: {app}\quickevent-data; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: {#BUILD_DIR}\bin\translations\*; DestDir: {app}\translations; Flags: ignoreversion recursesubdirs createallsubdirs
+;Source: {#BUILD_DIR}\bin\translations\*; DestDir: {app}\translations; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
