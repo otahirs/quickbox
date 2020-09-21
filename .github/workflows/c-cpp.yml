@@ -8,6 +8,7 @@ on:
 
 jobs:
   build_linux:
+    if: false
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -30,14 +31,8 @@ jobs:
       run: |
         curl --silent "https://api.github.com/repos/AppImage/AppImageKit/releases/latest" | jq -r '.assets[] | select(.name == "appimagetool-x86_64.AppImage").browser_download_url' | sudo xargs curl -L -o /opt/appimagetool-x86_64.AppImage --create-dirs --url
         sudo chmod +x /opt/appimagetool-x86_64.AppImage
-
-    - name: test
-      run: |
-        sudo find / -name libpq.so*
-        sudo find / -name libcrypto.so*
     
     - name: build AppImage
-      if: false
       run: |
         mkdir ./build
         ./quickevent/make-dist.sh --src-dir . --qt-dir ${Qt5_DIR} --work-dir ./build --appimage-tool /opt/appimagetool-x86_64.AppImage 
@@ -91,5 +86,5 @@ jobs:
     - name: create installer
       run: |
         choco install innosetup --no-progress
-        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=test" "/DQT_DIR=${Qt5_DIR}" "/DSSL_DIR=C:\msys64\mingw32" quickevent/quickevent.iss
+        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=test" "/DQT_DIR=D:/a/quickbox/Qt/5.15.0/mingw81_64" "/DSSL_DIR=C:\msys64\mingw32" quickevent/quickevent.iss
       # "/DPSQL_DIR=${{env.PGBIN}}"
