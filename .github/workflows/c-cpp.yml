@@ -80,7 +80,7 @@ jobs:
 
     - name: find
       run: |
-        where /r c:\ libpq*dll
+        where /r C:\Program Files (x86)\ libpq*dll
 
     - name: create installer
       run: |
