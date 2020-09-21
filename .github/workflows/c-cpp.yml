@@ -42,7 +42,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: quickevent-${APP_VERSION}-x86_64-${GITHUB_EVENT_NAME}-${GITHUB_SHA}.AppImage
-        path: ../build/artifacts/quickevent-${APP_VERSION}-x86_64.AppImage
+        path: ${readlink -f ../build/artifacts/quickevent-${APP_VERSION}-x86_64.AppImage}
       
       
   build_windows:
