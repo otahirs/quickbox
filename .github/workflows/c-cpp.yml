@@ -50,7 +50,6 @@ jobs:
       
       
   build_windows:
-    if: false
     runs-on: windows-latest
     defaults:
       run:
@@ -75,12 +74,17 @@ jobs:
         arch: 'win64_mingw81' 
 
     - name: configure
+      if: false
       run: |
         qmake.exe quickbox.pro -spec win32-g++ "CONFIG+=release" "CONFIG+=qtquickcompiler" "CONFIG+=force_debug_info" 
         mingw32-make.exe qmake_all
-
-    - name: make
-      run: mingw32-make.exe -j4
+        mingw32-make.exe -j4
+  
+    - name: test
+      run: |
+        sudo find / -name "libpq*dll"
+        sudo find / -name "libcrypto*dll"
+      shell: bash
  
     - name: find
       run: |
