@@ -40,7 +40,7 @@ jobs:
     - name: save AppImage
       uses: actions/upload-artifact@v2
       with:
-        name: quickevent-${GITHUB_EVENT_NAME}-${GITHUB_SHA}.AppImage
+        name: quickevent-${{ github.event_name }}-${ github.sha }.AppImage
         path: build/artifacts/quickevent-*-x86_64.AppImage
       
       
@@ -79,7 +79,7 @@ jobs:
     - name: create installer
       run: |
         choco install innosetup --no-progress
-        "C:\Program Files (x86)\Inno Setup 5\iscc.exe" "-DVERSION=${QUICKEVENT_VERSION}" quickevent/quickevent.iss
+        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "-DVERSION=test" "-DQT_DIR=${Qt5_DIR}" quickevent/quickevent.iss
       shell: pwsh
 
 
