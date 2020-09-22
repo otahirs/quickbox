@@ -8,6 +8,7 @@ on:
 
 jobs:
   build_linux:
+    if: false
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -84,8 +85,8 @@ jobs:
 
     - name: test
       run: |
-        dir ${{env.PGBIN}}
-        dir C:\msys64\mingw32\bin
+        dir ..
+        dir ${{PGBIN}}
     - name: create installer
       continue-on-error: true
       run: |
