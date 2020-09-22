@@ -89,7 +89,7 @@ jobs:
     - name: Create installer
       run: |
         choco install innosetup --no-progress
-        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=%VERSION%" "/DQT_DIR=%Qt5_Dir%" "/DSSL_DIR=C:\msys64\mingw32" "/DPSQL_DIR=%PGROOT%" quickevent/quickevent.iss 
+        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=%VERSION%" "/DQT_DIR=%Qt5_Dir%" "/DPSQL_DIR=%PGROOT%" quickevent/quickevent.iss 
     
     - name: Save setup
       uses: actions/upload-artifact@v2
