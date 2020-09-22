@@ -58,11 +58,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     
-    - name: test
-      run: | 
-        dir /r "%PGROOT%"
-        dir "%PGBIN%"
-    
     - name: Cache Qt
       id: cache-qt
       uses: actions/cache@v2
@@ -83,7 +78,18 @@ jobs:
         qmake.exe quickbox.pro -spec win32-g++ "CONFIG+=release" "CONFIG+=qtquickcompiler" "CONFIG+=force_debug_info" 
         mingw32-make.exe qmake_all
         mingw32-make.exe -j4
-        
+              
+    - name: Install language files
+      run: |
+        TRANS_DIR=bin/translations
+        mkdir -p $TRANS_DIR
+        for tsfile in `find . -name "*.ts"` ; do
+          qmfile=`basename "${tsfile%.*}.qm"`
+          echo "$QT_DIR/bin/lrelease $tsfile -qm $TRANS_DIR/$qmfile"
+          $Qt5_Dir/bin/lrelease $tsfile -qm $TRANS_DIR/$qmfile
+        done
+      shell: bash
+      
     - name: Get app version
       run: | 
         echo "::set-env name=VERSION::`grep APP_VERSION quickevent/app/quickevent/src/appversion.h | cut -d\\" -f2`"
