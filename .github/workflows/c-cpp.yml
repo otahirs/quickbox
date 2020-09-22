@@ -86,7 +86,7 @@ jobs:
     - name: test
       run: |
         dir ..
-        dir ${{PGBIN}}
+        dir ${PGBIN}
     - name: create installer
       continue-on-error: true
       run: |
