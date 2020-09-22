@@ -74,7 +74,7 @@ jobs:
         arch: 'win64_mingw81' 
     - name: test
       run: |
-        tree /F D:\a\quickbox\Qt
+        tree /F D:\a\quickbox\Qt\Tools
         SET
     - name: Build
       run: |
