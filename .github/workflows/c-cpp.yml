@@ -8,17 +8,16 @@ on:
 
 jobs:
   build_linux:
-    if: false
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
       
     - name: Cache Qt
       id: cache-qt
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
-        path: ../Qt
-        key: ${{ runner.os }}-QtCache
+        path: $RUNNER_WORKSPACE/Qt
+        key: ${{ runner.os }}-Qt
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
@@ -26,22 +25,26 @@ jobs:
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
         version: '5.15.0'
         host: 'linux'
+        
+    - name: Get app version
+      run: | 
+        echo "::set-env name=VERSION::`grep APP_VERSION quickevent/app/quickevent/src/appversion.h | cut -d\\" -f2`"
           
-    - name: get AppImageTool
+    - name: Get AppImageTool
       run: |
         curl --silent "https://api.github.com/repos/AppImage/AppImageKit/releases/latest" | jq -r '.assets[] | select(.name == "appimagetool-x86_64.AppImage").browser_download_url' | sudo xargs curl -L -o /opt/appimagetool-x86_64.AppImage --create-dirs --url
         sudo chmod +x /opt/appimagetool-x86_64.AppImage
     
-    - name: build AppImage
+    - name: Build AppImage
       run: |
         mkdir ./build
         ./quickevent/make-dist.sh --src-dir . --qt-dir ${Qt5_DIR} --work-dir ./build --appimage-tool /opt/appimagetool-x86_64.AppImage 
       # --lib-dir /usr/lib/x86_64-linux-gnu/
         
-    - name: save AppImage
+    - name: Save AppImage
       uses: actions/upload-artifact@v2
       with:
-        name: quickevent-${{ github.event_name }}-${{ github.sha }}.AppImage
+        name: quickevent-linux64-$VERSION.Appimage
         path: build/artifacts/quickevent-*-x86_64.AppImage
       
       
@@ -58,44 +61,35 @@ jobs:
       id: cache-qt
       uses: actions/cache@v2
       with:
-        path: ../Qt
+        path: $RUNNER_WORKSPACE\Qt
         key: ${{ runner.os }}-Qt
  
     - name: Install Qt
-      if: steps.cache-qt.outputs.cache-hit != 'true'
       uses: jurplel/install-qt-action@v2
       with:
+        cached: ${{ steps.cache-qt.outputs.cache-hit }}
         version: '5.15.0'
         host: 'windows'
         arch: 'win64_mingw81' 
       
-    - name: get version
-      id: ver
-      run: | 
-        echo "::set-env name=VERSION::`grep APP_VERSION quickevent/app/quickevent/src/appversion.h | cut -d\\" -f2`"
-        echo "::set-output name=version::`grep APP_VERSION quickevent/app/quickevent/src/appversion.h | cut -d\\" -f2`"
-      shell: bash
-
-    - name: test
-      run: | 
-        echo %VERSION%
-        echo ${{steps.ver.outputs.version}}
-        SET
-
-    - name: build
+    - name: Build
       run: |
         qmake.exe quickbox.pro -spec win32-g++ "CONFIG+=release" "CONFIG+=qtquickcompiler" "CONFIG+=force_debug_info" 
         mingw32-make.exe qmake_all
         mingw32-make.exe -j4
+        
+    - name: Get app version
+      run: | 
+        echo "::set-env name=VERSION::`grep APP_VERSION quickevent/app/quickevent/src/appversion.h | cut -d\\" -f2`"
+      shell: bash
   
-    - name: create installer
-      continue-on-error: true
+    - name: Create installer
       run: |
         choco install innosetup --no-progress
         "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=%VERSION%" "/DQT_DIR=%Qt5_Dir%" "/DSSL_DIR=C:\msys64\mingw32" "/DPSQL_DIR=%PGROOT%" quickevent/quickevent.iss 
     
-    - name: save Setup
+    - name: Save setup
       uses: actions/upload-artifact@v2
       with:
-        name: quickevent-${{ github.event_name }}-${{ github.sha }}.exe
-        path: _inno\quickevent\quickevent-win64-%VERSION%-setup.exe
+        name: quickevent-win64-$VERSION-setup.exe
+        path: _inno\quickevent\quickevent-win64-$VERSION-setup.exe
