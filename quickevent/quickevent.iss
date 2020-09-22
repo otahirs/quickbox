@@ -101,8 +101,8 @@ Source: {#QT_DIR}\qml\QtQuick\Window.2\*; DestDir: {app}\QtQuick\Window.2; Exclu
 ;Source: {#QT_DIR}\qml\QtQuick\WidgetsPrivate\*; DestDir: {app}\QtQuick\WidgetsPrivate; Excludes: "*d.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: {#QT_DIR}\qml\QtQuick.2\*; DestDir: {app}\QtQuick.2; Excludes: "*d.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: {#QT_DIR}\..\..\Tools\OpenSSL\Win_x64\bin\libssl-1_1.dll; DestDir: {app}; Flags: ignoreversion
-Source: {#QT_DIR}\..\..\Tools\OpenSSL\Win_x64\bin\libcrypto-1_1.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#QT_DIR}\..\..\Tools\OpenSSL\Win_x64\bin\libcrypto-1_1-x64.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#QT_DIR}\..\..\Tools\OpenSSL\Win_x64\bin\libssl-1_1-x64.dll; DestDir: {app}; Flags: ignoreversion
 
 Source: {#QT_DIR}\bin\libgcc_s_seh-1.dll; DestDir: {app}; Flags: ignoreversion
 Source: {#QT_DIR}\bin\libwinpthread-1.dll; DestDir: {app}; Flags: ignoreversion
