@@ -57,12 +57,19 @@ jobs:
         
     steps:
     - uses: actions/checkout@v2
-    - name: Install package
+      
+    - name: Cache Libs
+      id: cache-libs
+      uses: actions/cache@v2
+      with:
+        path: C:/msys64/bin
+        key: ${{ runner.os }}-Libs
+      
+    - name: Get OpenSSL and PostgreSQL libraries
+      if: steps.cache-libs.outputs.cache-hit != 'true'
       run: |
         C:/msys64/usr/bin/pacman -Sy --noconfirm
         C:/msys64/usr/bin/pacman -S mingw-w64-x86_64-openssl mingw-w64-x86_64-postgresql --noconfirm
-        C:/msys64/usr/bin/pacman -Ql mingw-w64-x86_64-openssl
-        C:/msys64/usr/bin/pacman -Ql mingw-w64-x86_64-postgresql
       shell: cmd
         
     - name: Cache Qt
@@ -118,7 +125,7 @@ jobs:
     - name: Create installer
       run: |
         choco install innosetup --no-progress
-        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=%VERSION%" "/DQT_DIR=%Qt5_Dir%" "/DPSQL_DIR=%PGROOT%" "/DSSL_DIR=${{ runner.workspace }}\OpenSSL" quickevent/quickevent.iss 
+        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=%VERSION%" "/DQT_DIR=%Qt5_Dir%" "/DPSQL_DIR=C:\mingw64" "/DSSL_DIR=C:\mingw64" quickevent/quickevent.iss 
       shell: cmd
     
     - name: Save setup
