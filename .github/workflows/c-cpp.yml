@@ -62,7 +62,7 @@ jobs:
       id: cache-libs
       uses: actions/cache@v2
       with:
-        path: C:/msys64/bin
+        path: C:/msys64/mingw64/bin
         key: ${{ runner.os }}-Libs
       
     - name: Get OpenSSL and PostgreSQL libraries
