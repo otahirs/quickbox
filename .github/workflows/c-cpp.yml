@@ -57,10 +57,11 @@ jobs:
         
     steps:
     - uses: actions/checkout@v2
-    - name: test
-      run: 
-        ls -l "$PGROOT"
-        ls -l "$PGBIN"
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        install: mingw-w64-openssl mingw-w64-postgresql
     
     - name: Cache Qt
       id: cache-qt
@@ -77,20 +78,20 @@ jobs:
         host: 'windows'
         arch: 'win64_mingw81' 
     
-    - name: Cache OpenSSL
-      id: cache-ssl
-      uses: actions/cache@v2
-      with:
-        path: ${{ runner.workspace }}\OpenSSL
-        key: ${{ runner.os }}-OpenSSL
+#    - name: Cache OpenSSL
+#      id: cache-ssl
+#      uses: actions/cache@v2
+#      with:
+#        path: ${{ runner.workspace }}\OpenSSL
+#        key: ${{ runner.os }}-OpenSSL
         
-    - name: Get OpenSSL
-      if: steps.cache-ssl.outputs.cache-hit != 'true'
-      run: |
-        mkdir ../OpenSSL
-        curl -L -o openssl.tar.xz https://dl.bintray.com/vszakats/generic/openssl-1.1.1c-win64-mingw.tar.xz
-        tar -xvf openssl.tar.xz -C ../OpenSSL --strip-components 1
-        rm -f openssl.tar.xz
+#    - name: Get OpenSSL
+#      if: steps.cache-ssl.outputs.cache-hit != 'true'
+#      run: |
+#        mkdir ../OpenSSL
+#        curl -L -o openssl.tar.xz https://dl.bintray.com/vszakats/generic/openssl-1.1.1c-win64-mingw.tar.xz
+#        tar -xvf openssl.tar.xz -C ../OpenSSL --strip-components 1
+#        rm -f openssl.tar.xz
     
     - name: Build
       run: |
