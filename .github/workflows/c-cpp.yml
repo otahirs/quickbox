@@ -71,6 +71,9 @@ jobs:
         version: '5.15.0'
         host: 'windows'
         arch: 'win64_mingw81' 
+        
+    - name: test
+      run: where /r c:\ libssl-1_1-x64.dll
       
     - name: Build
       run: |
