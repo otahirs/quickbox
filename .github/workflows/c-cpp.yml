@@ -57,6 +57,10 @@ jobs:
         
     steps:
     - uses: actions/checkout@v2
+    - name: test
+      run: 
+        ls $PGROOT
+        ls $PGBIN
     
     - name: Cache Qt
       id: cache-qt
