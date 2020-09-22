@@ -74,8 +74,7 @@ jobs:
         arch: 'win64_mingw81' 
     - name: test
       run: |
-        tree /F D:\a\quickbox\Qt\Tools
-        SET
+        where /S C:\ libcrypto-1_1-x64.dll
     - name: Build
       run: |
         qmake.exe quickbox.pro -spec win32-g++ "CONFIG+=release" "CONFIG+=qtquickcompiler" "CONFIG+=force_debug_info" 
