@@ -60,6 +60,8 @@ jobs:
     - name: Install package
       run: |
         C:/msys64/usr/bin/pacman -Syu --noconfirm
+        C:/msys64/usr/bin/pacman -Syu --noconfirm
+        C:/msys64/usr/bin/pacman -Syu --noconfirm
         C:/msys64/usr/bin/pacman -S mingw-w64-openssl mingw-w64-postgresql --noconfirm
       shell: cmd
         
