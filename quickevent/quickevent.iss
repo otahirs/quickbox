@@ -6,13 +6,8 @@
 #define APP_NAME_LOWER "quickevent"
 #define COMPANY "win64"
 
-#ifndef QT_DIR
-#define QT_DIR "c:/Qt/5.15.0/mingw81_64"
-#endif
-;#define MINGW_DIR "C:\app\qt5.6\Tools\mingw492_32"
-#ifndef SSL_DIR
-#define SSL_DIR "C:\qt\Tools\OpenSSL\Win_x64"
-#endif
+;#define QT_DIR "c:/Qt/5.15.0/mingw81_64"
+;#define SSL_DIR "C:\qt\Tools\OpenSSL\Win_x64"
 ;#define PSQL_DIR "C:\app\pgsql64"
 
 #define INCLUDE_QT
@@ -107,8 +102,8 @@ Source: {#QT_DIR}\qml\QtQuick\Window.2\*; DestDir: {app}\QtQuick\Window.2; Exclu
 ;Source: {#QT_DIR}\qml\QtQuick\WidgetsPrivate\*; DestDir: {app}\QtQuick\WidgetsPrivate; Excludes: "*d.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: {#QT_DIR}\qml\QtQuick.2\*; DestDir: {app}\QtQuick.2; Excludes: "*d.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: {#SSL_DIR}\bin\libssl-1_1.dll; DestDir: {app}; Flags: ignoreversion
-Source: {#SSL_DIR}\bin\libcrypto-1_1.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#SSL_DIR}\bin\libssl-1_1-x64.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#SSL_DIR}\bin\libcrypto-1_1-x64.dll DestDir: {app}; Flags: ignoreversion
 
 Source: {#QT_DIR}\bin\libgcc_s_seh-1.dll; DestDir: {app}; Flags: ignoreversion
 Source: {#QT_DIR}\bin\libwinpthread-1.dll; DestDir: {app}; Flags: ignoreversion
@@ -130,71 +125,3 @@ Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\{#APP_NAME}; Filena
 
 [Run]
 Filename: {app}\{#APP_NAME_LOWER}.exe; Description: {cm:LaunchProgram,{#APP_NAME}}; Flags: nowait postinstall skipifsilent
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
