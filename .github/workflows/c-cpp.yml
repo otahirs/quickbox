@@ -70,7 +70,8 @@ jobs:
       run: |
         C:/msys64/usr/bin/pacman -Sy --noconfirm
         C:/msys64/usr/bin/pacman -S mingw-w64-x86_64-openssl mingw-w64-x86_64-postgresql --noconfirm
-      shell: cmd
+        tree C:\msys64
+      shell: cmd      
         
     - name: Cache Qt
       id: cache-qt
