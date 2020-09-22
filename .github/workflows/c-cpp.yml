@@ -76,7 +76,7 @@ jobs:
     - name: Get OpenSSL
       run: |
         mkdir ${{ runner.workspace }}\OpenSSL
-        curl -o openssl.zip "some URL"
+        curl -o openssl.zip https://dl.bintray.com/vszakats/generic/openssl-1.1.1g-win64-mingw.zip
         unzip openssl.zip -d ${{ runner.workspace }}\OpenSSL
         rm -f openssl.zip
         tree ${{ runner.workspace }}\OpenSSL
@@ -106,7 +106,7 @@ jobs:
     - name: Create installer
       run: |
         choco install innosetup --no-progress
-        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=%VERSION%" "/DQT_DIR=%Qt5_Dir%" "/DPSQL_DIR=%PGROOT%" "/DSSL_DIR=c:\Program Files\OpenSSL" quickevent/quickevent.iss 
+        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=%VERSION%" "/DQT_DIR=%Qt5_Dir%" "/DPSQL_DIR=%PGROOT%" "/DSSL_DIR=${{ runner.workspace }}\OpenSSL" quickevent/quickevent.iss 
     
     - name: Save setup
       uses: actions/upload-artifact@v2
