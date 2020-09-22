@@ -68,33 +68,20 @@ jobs:
         version: '5.15.0'
         host: 'windows'
         arch: 'win64_mingw81' 
-        
-    - name: Cache Build Temp
-      id: cache-build
-      uses: actions/cache@v2
-      with:
-        path: .
-        key: ${{ runner.os }}-cache-build
-      
-    - name: test
-      run: |
-        tree
 
     - name: build
-      if:  steps.cache-build.outputs.cache-hit != 'true'
       run: |
         qmake.exe quickbox.pro -spec win32-g++ "CONFIG+=release" "CONFIG+=qtquickcompiler" "CONFIG+=force_debug_info" 
         mingw32-make.exe qmake_all
         mingw32-make.exe -j4
 
-    - name: test2
-      run: |
-        SET
-        echo %PGBIN%
-        tree
     - name: create installer
       continue-on-error: true
       run: |
         choco install innosetup --no-progress
-        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=test" "/DQT_DIR=D:/a/quickbox/Qt/5.15.0/mingw81_64" "/DSSL_DIR=C:\msys64\mingw32" quickevent/quickevent.iss
-      # "/DPSQL_DIR=${{env.PGBIN}}"
+        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=test" "/DQT_DIR=%Qt5_Dir%" "/DSSL_DIR=C:\msys64\mingw32" "/DPSQL_DIR=%PGROOT%" quickevent/quickevent.iss 
+    - name: test3
+      run: |
+        dir ..
+        tree /F ..\_inno\
+        tree /F %RUNNER_WORKSPACE%
