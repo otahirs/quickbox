@@ -16,7 +16,7 @@ jobs:
       id: cache-qt
       uses: actions/cache@v2
       with:
-        path: $RUNNER_WORKSPACE/Qt
+        path: ${{ env.RUNNER_WORKSPACE }}/Qt
         key: ${{ runner.os }}-Qt
 
     - name: Install Qt
@@ -44,7 +44,7 @@ jobs:
     - name: Save AppImage
       uses: actions/upload-artifact@v2
       with:
-        name: quickevent-linux64-$VERSION.Appimage
+        name: quickevent-linux64-${{ env.VERSION }}.Appimage
         path: build/artifacts/quickevent-*-x86_64.AppImage
       
       
@@ -61,7 +61,7 @@ jobs:
       id: cache-qt
       uses: actions/cache@v2
       with:
-        path: $RUNNER_WORKSPACE\Qt
+        path: ${{ env.RUNNER_WORKSPACE }}\Qt
         key: ${{ runner.os }}-Qt
  
     - name: Install Qt
@@ -91,5 +91,5 @@ jobs:
     - name: Save setup
       uses: actions/upload-artifact@v2
       with:
-        name: quickevent-win64-$VERSION-setup.exe
-        path: _inno\quickevent\quickevent-win64-$VERSION-setup.exe
+        name: quickevent-win64-${{ env.VERSION }}-setup.exe
+        path: _inno\quickevent\quickevent-win64-${{ env.VERSION }}-setup.exe
