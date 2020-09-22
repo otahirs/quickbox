@@ -58,9 +58,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install package
-      run: |
-        echo ::add-path::C:/msys64/usr/bin/
-        pacman -S mingw-w64-openssl mingw-w64-postgresql
+      run: C:/msys64/usr/bin/pacman -S mingw-w64-openssl mingw-w64-postgresql
         
     - name: Cache Qt
       id: cache-qt
