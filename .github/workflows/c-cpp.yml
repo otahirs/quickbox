@@ -47,6 +47,12 @@ jobs:
       with:
         name: quickevent-linux64-${{ env.VERSION }}.Appimage
         path: build/artifacts/quickevent-*-x86_64.AppImage
+  
+    - name: Save gzip
+      uses: actions/upload-artifact@v2
+      with:
+        name: quickevent-linux64-${{ env.VERSION }}.tgz
+        path: build/artifacts/quickevent-*-x86_64.AppImage
       
       
   build_windows:
@@ -70,7 +76,6 @@ jobs:
       run: |
         C:/msys64/usr/bin/pacman -Sy --noconfirm
         C:/msys64/usr/bin/pacman -S mingw-w64-x86_64-openssl mingw-w64-x86_64-postgresql --noconfirm
-        echo "::set-env name=LIB_DIR::C:\msys64\mingw64"
       shell: cmd      
         
     - name: Cache Qt
@@ -126,7 +131,7 @@ jobs:
     - name: Create installer
       run: |
         choco install innosetup --no-progress
-        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=%VERSION%" "/DQT_DIR=%Qt5_Dir%" "/DPSQL_DIR=%LIB_DIR%" "/DSSL_DIR=%LIB_DIR%" quickevent/quickevent.iss 
+        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=%VERSION%" "/DQT_DIR=%Qt5_Dir%" "/DPSQL_DIR=C:\msys64\mingw64" "/DSSL_DIR=C:\msys64\mingw64" quickevent/quickevent.iss 
       shell: cmd
     
     - name: Save setup
