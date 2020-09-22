@@ -61,11 +61,9 @@ jobs:
       run: |
         C:/msys64/usr/bin/pacman -Sy --noconfirm
         C:/msys64/usr/bin/pacman -S mingw-w64-x86_64-openssl mingw-w64-x86_64-postgresql --noconfirm
+        C:/msys64/usr/bin/pacman -Ql mingw-w64-x86_64-openssl
+        C:/msys64/usr/bin/pacman -Ql mingw-w64-x86_64-postgresql
       shell: cmd
-    - name: test
-      run: |
-        cd C:
-        find . -name "libqp.dll"
         
     - name: Cache Qt
       id: cache-qt
