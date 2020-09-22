@@ -77,7 +77,7 @@ jobs:
       run: |
         mkdir ../OpenSSL
         curl -L -o openssl.zip https://dl.bintray.com/vszakats/generic/openssl-1.1.1g-win64-mingw.zip
-        tar -xzvf openssl.zip -C ../OpenSSL --strip-compoents 1
+        tar -xzvf openssl.zip -C ../OpenSSL --strip-components 1
         rm -f openssl.zip
     
     - name: Build
