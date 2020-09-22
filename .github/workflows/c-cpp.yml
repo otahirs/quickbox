@@ -74,7 +74,8 @@ jobs:
         arch: 'win64_mingw81' 
     - name: test
       run: |
-       dir c: 
+        dir "c:\Program Files\"
+        dir "c:\Program Files (x86)\"
     - name: Build
       run: |
         qmake.exe quickbox.pro -spec win32-g++ "CONFIG+=release" "CONFIG+=qtquickcompiler" "CONFIG+=force_debug_info" 
