@@ -75,7 +75,7 @@ jobs:
         mkdir ${{ runner.workspace }}\OpenSSL
         curl -o openssl.zip https://dl.bintray.com/vszakats/generic/openssl-1.1.1g-win64-mingw.zip
         unzip openssl.zip -d ${{ runner.workspace }}\OpenSSL
-        rm -f openssl.zip
+        rm openssl.zip
         tree ${{ runner.workspace }}\OpenSSL
     
     - name: Build
