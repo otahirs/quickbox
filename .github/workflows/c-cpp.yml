@@ -51,10 +51,7 @@ jobs:
       
   build_windows:
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: cmd
-    
+        
     steps:
     - uses: actions/checkout@v2
     
@@ -86,6 +83,7 @@ jobs:
         qmake.exe quickbox.pro -spec win32-g++ "CONFIG+=release" "CONFIG+=qtquickcompiler" "CONFIG+=force_debug_info" 
         mingw32-make.exe qmake_all
         mingw32-make.exe -j4
+      shell: cmd
               
     - name: Install language files
       run: |
@@ -96,17 +94,15 @@ jobs:
           echo "$QT_DIR/bin/lrelease $tsfile -qm $TRANS_DIR/$qmfile"
           $Qt5_Dir/bin/lrelease $tsfile -qm $TRANS_DIR/$qmfile
         done
-      shell: bash
       
     - name: Get app version
-      run: | 
-        echo "::set-env name=VERSION::`grep APP_VERSION quickevent/app/quickevent/src/appversion.h | cut -d\\" -f2`"
-      shell: bash
+      run: echo "::set-env name=VERSION::`grep APP_VERSION quickevent/app/quickevent/src/appversion.h | cut -d\\" -f2`"
   
     - name: Create installer
       run: |
         choco install innosetup --no-progress
         "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "/DVERSION=%VERSION%" "/DQT_DIR=%Qt5_Dir%" "/DPSQL_DIR=%PGROOT%" "/DSSL_DIR=${{ runner.workspace }}\OpenSSL" quickevent/quickevent.iss 
+      shell: cmd
     
     - name: Save setup
       uses: actions/upload-artifact@v2
