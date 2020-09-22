@@ -87,7 +87,6 @@ jobs:
         curl -L -o openssl.tar.xz https://dl.bintray.com/vszakats/generic/openssl-1.1.1c-win64-mingw.tar.xz
         tar -xvf openssl.tar.xz -C ../OpenSSL --strip-components 1
         rm -f openssl.tar.xz
-        ls ../OpenSSL
     
     - name: Build
       run: |
