@@ -8,6 +8,7 @@
 
 ;#define QT_DIR "c:/Qt/5.15.0/mingw81_64"
 ;#define PSQL_DIR "C:\app\pgsql64"
+;#define SSL_DIR "C:\qt\Tools\OpenSSL\Win_x64"
 
 #define INCLUDE_QT
 #define BUILD_DIR ".."
@@ -101,8 +102,8 @@ Source: {#QT_DIR}\qml\QtQuick\Window.2\*; DestDir: {app}\QtQuick\Window.2; Exclu
 ;Source: {#QT_DIR}\qml\QtQuick\WidgetsPrivate\*; DestDir: {app}\QtQuick\WidgetsPrivate; Excludes: "*d.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: {#QT_DIR}\qml\QtQuick.2\*; DestDir: {app}\QtQuick.2; Excludes: "*d.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: {#PSQL_DIR}\bin\libcrypto-1_1-x64.dll; DestDir: {app}; Flags: ignoreversion
-Source: {#PSQL_DIR}\bin\libssl-1_1-x64.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#SSL_DIR}\bin\libcrypto-1_1-x64.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#SSL_DIR}\bin\libssl-1_1-x64.dll; DestDir: {app}; Flags: ignoreversion
 
 Source: {#QT_DIR}\bin\libgcc_s_seh-1.dll; DestDir: {app}; Flags: ignoreversion
 Source: {#QT_DIR}\bin\libwinpthread-1.dll; DestDir: {app}; Flags: ignoreversion
