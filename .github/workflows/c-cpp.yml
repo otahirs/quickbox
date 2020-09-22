@@ -75,9 +75,9 @@ jobs:
         
     - name: Get OpenSSL
       run: |
-        mkdir ${{ runner.workspace }}/OpenSSL
+        mkdir ../OpenSSL
         curl -L -o openssl.zip https://dl.bintray.com/vszakats/generic/openssl-1.1.1g-win64-mingw.zip
-        unzip openssl.zip -d ${{ runner.workspace }}/OpenSSL
+        tar -xzvf openssl.zip -C ../OpenSSL --strip-compoents 1
         rm -f openssl.zip
     
     - name: Build
