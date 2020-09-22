@@ -57,11 +57,9 @@ jobs:
         
     steps:
     - uses: actions/checkout@v2
-    - name: Setup MSYS2
+    - name: Install package
       run: |
-        printenv
-        ls C:/msys64
-        ls C:/msys64/bin
+        echo ::add-path::C:/msys64/usr/bin/
         pacman -S mingw-w64-openssl mingw-w64-postgresql
         
     - name: Cache Qt
