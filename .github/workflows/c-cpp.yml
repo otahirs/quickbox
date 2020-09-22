@@ -51,6 +51,9 @@ jobs:
       
   build_windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
         
     steps:
     - uses: actions/checkout@v2
