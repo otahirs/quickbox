@@ -72,6 +72,14 @@ jobs:
         version: '5.15.0'
         host: 'windows'
         arch: 'win64_mingw81' 
+        
+    - name: Get OpenSSL
+      run: |
+        mkdir ${{ runner.workspace }}\OpenSSL
+        curl -o openssl.zip "some URL"
+        unzip openssl.zip -d ${{ runner.workspace }}\OpenSSL
+        rm -f openssl.zip
+        tree ${{ runner.workspace }}\OpenSSL
     
     - name: Build
       run: |
