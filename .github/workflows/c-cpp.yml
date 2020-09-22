@@ -58,6 +58,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     
+    
+    - name: test
+      run: |
+        dir /r "c:\Program Files\OpenSSL\bin"
+    
     - name: Cache Qt
       id: cache-qt
       uses: actions/cache@v2
@@ -72,10 +77,7 @@ jobs:
         version: '5.15.0'
         host: 'windows'
         arch: 'win64_mingw81' 
-    - name: test
-      run: |
-        dir "c:\Program Files\OpenSSL\"
-        dir /r "c:\Program Files (x86)\"
+    
     - name: Build
       run: |
         qmake.exe quickbox.pro -spec win32-g++ "CONFIG+=release" "CONFIG+=qtquickcompiler" "CONFIG+=force_debug_info" 
