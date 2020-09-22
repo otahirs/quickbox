@@ -58,8 +58,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Setup MSYS2
-      run: | 
-        pacman -S mingw-w64-openssl mingw-w64-postgresql
+      uses: msys2/setup-msys2@v2
+      with:
+       install: mingw-w64-openssl mingw-w64-postgresql
         
     - name: Cache Qt
       id: cache-qt
