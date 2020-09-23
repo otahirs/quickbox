@@ -29,10 +29,8 @@ jobs:
         cd openssl-1.1.1f
         ./config  shared zlib
         make
-        pwd
-        ls -l
-        cp libssl.so ${{ runner.workspace }}/libs
-        cp libcrypo.so ${{ runner.workspace }}/libs
+        cp libssl.so* ${{ runner.workspace }}/libs
+        cp libcrytpo.so* ${{ runner.workspace }}/libs
         cp /usr/lib/x86_64-linux-gnu/libpq.so* ${{ runner.workspace }}/libs
 
     - name: Cache Qt
