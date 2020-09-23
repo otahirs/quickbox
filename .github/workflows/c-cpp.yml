@@ -30,7 +30,7 @@ jobs:
         ./config  shared zlib
         make
         cp libssl.so* ${{ runner.workspace }}/libs
-        cp libcrytpo.so* ${{ runner.workspace }}/libs
+        cp libcrypto.so* ${{ runner.workspace }}/libs
         cp /usr/lib/x86_64-linux-gnu/libpq.so* ${{ runner.workspace }}/libs
 
     - name: Cache Qt
