@@ -214,16 +214,6 @@ for tsfile in `/usr/bin/find $SRC_DIR -name "*.ts"` ; do
 	$QT_DIR/bin/lrelease $tsfile -qm $TRANS_DIR/$qmfile
 done
 
-# include SSL and PostreSQL libraries
-if [ ! -z $LIB_DIR ]; then
-	$RSYNC $LIB_DIR/libcrypto.so* $DIST_LIB_DIR
-	$RSYNC $LIB_DIR/libssl.so* $DIST_LIB_DIR
-	$RSYNC $LIB_DIR/libpq.so* $DIST_LIB_DIR
-	chmod 755 $DIST_LIB_DIR/libcrypto.so*
-	chmod 755 $DIST_LIB_DIR/libssl.so*
-	chmod 755 $DIST_LIB_DIR/libpq.so*
-fi
-
 ARTIFACTS_DIR=$WORK_DIR/artifacts
 mkdir -p $ARTIFACTS_DIR
 
