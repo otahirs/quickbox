@@ -68,7 +68,12 @@ jobs:
       id: cache-libs
       uses: actions/cache@v2
       with:
-        path: C:/msys64/mingw64/bin
+        path: |
+          C:/msys64/mingw64/bin/libcrypto-1_1-x64.dll
+          C:/msys64/mingw64/bin/libssl-1_1-x64.dll
+          C:/msys64/mingw64/bin/libiconv-2.dll
+          C:/msys64/mingw64/bin/libintl-8.dll
+          C:/msys64/mingw64/bin/libpq.dll
         key: ${{ runner.os }}-Libs
       
     - name: Get OpenSSL and PostgreSQL libraries
@@ -77,8 +82,6 @@ jobs:
         C:/msys64/usr/bin/pacman -Sy --noconfirm
         C:/msys64/usr/bin/pacman -S mingw-w64-x86_64-openssl mingw-w64-x86_64-postgresql --noconfirm
       shell: cmd      
-    - name: test
-      run: ls C:/msys64/mingw64/bin | grep dll
         
     - name: Cache Qt
       id: cache-qt
@@ -94,21 +97,6 @@ jobs:
         version: '5.15.0'
         host: 'windows'
         arch: 'win64_mingw81' 
-    
-#    - name: Cache OpenSSL
-#      id: cache-ssl
-#      uses: actions/cache@v2
-#      with:
-#        path: ${{ runner.workspace }}\OpenSSL
-#        key: ${{ runner.os }}-OpenSSL
-        
-#    - name: Get OpenSSL
-#      if: steps.cache-ssl.outputs.cache-hit != 'true'
-#      run: |
-#        mkdir ../OpenSSL
-#        curl -L -o openssl.tar.xz https://dl.bintray.com/vszakats/generic/openssl-1.1.1c-win64-mingw.tar.xz
-#        tar -xvf openssl.tar.xz -C ../OpenSSL --strip-components 1
-#        rm -f openssl.tar.xz
     
     - name: Build
       run: |
