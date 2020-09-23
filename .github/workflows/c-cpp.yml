@@ -44,7 +44,7 @@ jobs:
       uses: jurplel/install-qt-action@v2
       with:
         cached: false #${{ steps.cache-qt.outputs.cache-hit }}
-        version: '5.14'
+        version: '5.14.2'
         host: 'linux'
         
     - name: Get app version
