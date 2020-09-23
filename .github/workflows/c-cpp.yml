@@ -11,12 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-      
-    - name: Get OpenSSL and PostgreSQL libraries
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libssl-dev libpq-dev
-      
+
     - name: Cache Qt
       id: cache-qt
       uses: actions/cache@v2
@@ -43,7 +38,7 @@ jobs:
     - name: Build AppImage
       run: |
         mkdir ./build
-        ./quickevent/make-dist.sh --src-dir . --qt-dir ${Qt5_DIR} --work-dir ./build --lib-dir /usr/lib/x86_64-linux-gnu --appimage-tool /opt/appimagetool-x86_64.AppImage 
+        ./quickevent/make-dist.sh --src-dir . --qt-dir ${Qt5_DIR} --work-dir ./build --lib-dir /usr/lib/x86_64-linux-gnu/ --appimage-tool /opt/appimagetool-x86_64.AppImage 
         
     - name: Save AppImage
       uses: actions/upload-artifact@v2
