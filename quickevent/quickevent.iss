@@ -67,6 +67,8 @@ Source: {#PSQL_DIR}\bin\libpq.dll; DestDir: {app}; Flags: ignoreversion
 Source: {#PSQL_DIR}\bin\libintl-8.dll; DestDir: {app}; Flags: ignoreversion
 Source: {#PSQL_DIR}\bin\libiconv-2.dll; DestDir: {app}; Flags: ignoreversion
 Source: {#PSQL_DIR}\bin\libxml2-2.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#PSQL_DIR}\bin\liblzma-5.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#PSQL_DIR}\bin\zlib1.dll; DestDir: {app}; Flags: ignoreversion
 
 #ifdef INCLUDE_QT
 Source: {#QT_DIR}\bin\Qt5Core.dll; DestDir: {app}; Flags: ignoreversion
