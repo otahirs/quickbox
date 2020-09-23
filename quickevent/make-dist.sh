@@ -218,6 +218,7 @@ if [ ! -z $LIB_DIR ]; then
 	$RSYNC $LIB_DIR/libcrypto.so* $DIST_LIB_DIR
 	$RSYNC $LIB_DIR/libssl.so* $DIST_LIB_DIR
 	$RSYNC $LIB_DIR/libpq.so* $DIST_LIB_DIR
+	chmod +rx $DIST_LIB_DIR/*
 fi
 
 ARTIFACTS_DIR=$WORK_DIR/artifacts
