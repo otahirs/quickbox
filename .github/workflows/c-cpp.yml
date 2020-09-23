@@ -73,6 +73,7 @@ jobs:
           C:/msys64/mingw64/bin/libssl-1_1-x64.dll
           C:/msys64/mingw64/bin/libiconv-2.dll
           C:/msys64/mingw64/bin/libintl-8.dll
+          C:/msys64/mingw64/bin/libxml2-2.dll
           C:/msys64/mingw64/bin/libpq.dll
         key: ${{ runner.os }}-Libs
       
