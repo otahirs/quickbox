@@ -11,8 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: test
-      run: ls -l /usr/lib/x86_64-linux-gnu/ | grep lib*.so*
+      
+    - name: Get OpenSSL and PostgreSQL libraries
+      run: sudo apt -y install libssl-dev libpq-dev
       
     - name: Cache Qt
       id: cache-qt
