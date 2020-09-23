@@ -106,7 +106,7 @@ if [ ! -x $APP_IMAGE_TOOL ]; then
 	error "AppImageTool file must be executable, use chmod +x $APP_IMAGE_TOOL\n"
 	help
 fi
-if [ -d $LIB_DIR ] && [ ! -f "${LIB_DIR}libcrypto.so" ] || [ ! -f "${LIB_DIR}libssl.so" ] || [ ! -f "${LIB_DIR}libpq.so"]; then
+if [ -d $LIB_DIR ] && ( [ ! -f "${LIB_DIR}libcrypto.so" ] || [ ! -f "${LIB_DIR}libssl.so" ] || [ ! -f "${LIB_DIR}libpq.so"] ); then
 	error "folder $LIB_DIR does not contain required libraries"
 	help
 fi
