@@ -22,7 +22,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
-        cached: ${{ steps.cache-qt.outputs.cache-hit }}
+        cached: false #${{ steps.cache-qt.outputs.cache-hit }}
         version: '5.15.1'
         host: 'linux'
         
