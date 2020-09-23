@@ -60,16 +60,12 @@ Source: {#BUILD_DIR}\bin\translations\*; DestDir: {app}\translations; Flags: ign
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
-Source: {#PSQL_DIR}\bin\libpq.dll; DestDir: {app}; Flags: ignoreversion
-Source: {#PSQL_DIR}\bin\libecpg.dll; DestDir: {app}; Flags: ignoreversion
-Source: {#PSQL_DIR}\bin\libpgtypes.dll; DestDir: {app}; Flags: ignoreversion
-Source: {#PSQL_DIR}\bin\libecpg_compat.dll; DestDir: {app}; Flags: ignoreversion
-;Source: {#PSQL_DIR}\bin\libintl-*.dll; DestDir: {app}; Flags: ignoreversion
-;Source: {#PSQL_DIR}\bin\libssl*.dll; DestDir: {app}; Flags: ignoreversion
-;Source: {#PSQL_DIR}\bin\ssleay32.dll; DestDir: {app}; Flags: ignoreversion
-;Source: {#PSQL_DIR}\bin\libiconv-*.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#SSL_DIR}\bin\libcrypto-1_1-x64.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#SSL_DIR}\bin\libssl-1_1-x64.dll; DestDir: {app}; Flags: ignoreversion
 
-;Source: c:\app\openssl\*.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#PSQL_DIR}\bin\libpq.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#PSQL_DIR}\bin\libintl-8.dll; DestDir: {app}; Flags: ignoreversion
+Source: {#PSQL_DIR}\bin\libiconv-2.dll; DestDir: {app}; Flags: ignoreversion
 
 #ifdef INCLUDE_QT
 Source: {#QT_DIR}\bin\Qt5Core.dll; DestDir: {app}; Flags: ignoreversion
@@ -104,9 +100,6 @@ Source: {#QT_DIR}\plugins\sqldrivers\qsqlpsql.dll; DestDir: {app}\sqldrivers; Fl
 Source: {#QT_DIR}\qml\QtQuick\Window.2\*; DestDir: {app}\QtQuick\Window.2; Excludes: "*d.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: {#QT_DIR}\qml\QtQuick\WidgetsPrivate\*; DestDir: {app}\QtQuick\WidgetsPrivate; Excludes: "*d.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: {#QT_DIR}\qml\QtQuick.2\*; DestDir: {app}\QtQuick.2; Excludes: "*d.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
-
-Source: {#SSL_DIR}\bin\libcrypto-1_1-x64.dll; DestDir: {app}; Flags: ignoreversion
-Source: {#SSL_DIR}\bin\libssl-1_1-x64.dll; DestDir: {app}; Flags: ignoreversion
 
 Source: {#QT_DIR}\bin\libgcc_s_seh-1.dll; DestDir: {app}; Flags: ignoreversion
 Source: {#QT_DIR}\bin\libwinpthread-1.dll; DestDir: {app}; Flags: ignoreversion
