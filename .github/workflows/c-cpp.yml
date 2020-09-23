@@ -12,7 +12,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: test
-      run: ls -l test/usr/lib/x86_64-linux-gnu/ | grep lib*.so*
+      run: ls -l /usr/lib/x86_64-linux-gnu/ | grep lib*.so*
       
     - name: Cache Qt
       id: cache-qt
