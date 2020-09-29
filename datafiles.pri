@@ -21,5 +21,6 @@ win32 {
 	QMAKE_EXTRA_TARGETS += datafiles
 	datafiles.commands = \
     	# mkdir not needed for windows
-	   robocopy $$shell_path($$SRC_DATA_DIR) $$shell_path($$DEST_DATA_DIR) /IS /E
+		(robocopy $$shell_path($$SRC_DATA_DIR) $$shell_path($$DEST_DATA_DIR) /IS /E) ^& IF %ERRORLEVEL% LSS 8 SET ERRORLEVEL = 0
+
 }
