@@ -22,5 +22,5 @@ win32 {
 	datafiles.commands = \
 		robocopy $$shell_path($$SRC_DATA_DIR) $$shell_path($$DEST_DATA_DIR) /IS /E
 		# 0-7 exit codes are not error
-		IF %ERRORLEVEL% LSS 8 SET ERRORLEVEL = 0
+		IF %ERRORLEVEL% LSS 8 SET ERRORLEVEL=0
 }
