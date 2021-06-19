@@ -25,7 +25,7 @@ jobs:
       uses: jurplel/install-qt-action@v2
       with:
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
-        version: '5.15.0'
+        version: '5.15.5'
         host: 'linux'
         
     - name: Get app version
@@ -99,7 +99,7 @@ jobs:
       uses: jurplel/install-qt-action@v2
       with:
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
-        version: '5.15.0'
+        version: '5.15.5'
         host: 'windows'
         arch: 'win64_mingw81' 
     
