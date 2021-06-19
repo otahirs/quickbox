@@ -19,13 +19,13 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ runner.workspace }}/Qt
-        key: ${{ runner.os }}-Qt5.15.5
+        key: ${{ runner.os }}-Qt5.15.2
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
-        version: '5.15.5'
+        version: '5.15.2'
         host: 'linux'
         
     - name: Get app version
@@ -93,13 +93,13 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ runner.workspace }}\Qt
-        key: ${{ runner.os }}-Qt5.15.5
+        key: ${{ runner.os }}-Qt5.15.2
  
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
-        version: '5.15.5'
+        version: '5.15.2'
         host: 'windows'
         arch: 'win64_mingw81' 
     
