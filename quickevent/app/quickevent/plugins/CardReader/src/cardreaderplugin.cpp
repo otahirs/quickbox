@@ -449,7 +449,7 @@ void CardReaderPlugin::setStartTimeForNextLeg(int relay_id, int prev_leg, int pr
 	q.exec("UPDATE runs SET startTimeMs=" + QString::number(prev_finish_time)
 		   + " WHERE relayId=" + QString::number(relay_id)
 		   + " AND leg=" + QString::number(prev_leg+1)
-		   + " AND COALESCE(startTimeMs, 0)=0"
+		   //+ " AND COALESCE(startTimeMs, 0)=0" faster runner can readout after the slower one, hence this check cannot be used
 		   , qf::core::Exception::Throw);
 }
 
@@ -470,8 +470,9 @@ bool CardReaderPlugin::processCardToRunAssignment(int card_id, int run_id)
 		if(start_time.isNull() && leg > 1) {
 			/// if start time not set, take start time from previous leg
 			q.execThrow("SELECT finishTimeMs FROM runs"
-					 " WHERE relayId=" + QString::number(relay_id)
-				   + " AND leg=" + QString::number(leg-1));
+					  " WHERE relayId=" + QString::number(relay_id)
+					+ " AND leg=" + QString::number(leg-1)
+					+ " ORDER BY finishTimeMs");
 			if(q.next()) {
 				int prev_finish_time = q.value(0).toInt();
 				if(prev_finish_time > 0) {
@@ -489,7 +490,7 @@ bool CardReaderPlugin::processCardToRunAssignment(int card_id, int run_id)
 		q.execThrow("SELECT id, startTimeMs, finishTimeMs FROM runs"
 				 " WHERE relayId=" + QString::number(relay_id)
 			   + " AND leg=" + QString::number(leg+1));
-		if(q.next()) {
+		while(q.next()) {
 			start_time = q.value(1);
 			int finish_time = q.value(2).toInt();
 			if(finish_time > 0 && start_time.isNull()) {
@@ -500,7 +501,13 @@ bool CardReaderPlugin::processCardToRunAssignment(int card_id, int run_id)
 		}
 
 		/// set start time for next leg
-		setStartTimeForNextLeg(relay_id, leg, checked_card.finishTimeMs());
+		qf::core::sql::Query qs;
+		qs.execThrow("SELECT finishTimeMs FROM runs"
+				  " WHERE relayId=" + QString::number(relay_id)
+				+ " AND leg=" + QString::number(leg)
+				+ " ORDER BY finishTimeMs");
+		int finish_time = q.value(0).toInt();
+		setStartTimeForNextLeg(relay_id, leg, finish_time);
 	}
 	else {
 		quickevent::core::si::CheckedCard checked_card = checkCard(card_id, run_id);
