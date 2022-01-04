@@ -289,7 +289,7 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 				.joinRestricted("runs.relayId", "relays.id", "relays.classId=" QF_IARG(class_id), qfs::QueryBuilder::INNER_JOIN)
 				//.where("runs.relayId IN (" + relay_ids.join(',') + ")")
 				.where("runs.leg>0 AND runs.leg<=" + QString::number(leg_count))
-				.orderBy("runs.relayId, runs.leg");
+				.orderBy("runs.relayId, runs.leg, runs.disqualified, runs.timeMs");
 		q.execThrow(qb.toString());
 		while(q.next()) {
 			int relay_id = q.value("runs.relayId").toInt();
@@ -298,6 +298,10 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 					Relay &relay = relays[i];
 					int legno = q.value("runs.leg").toInt();
 					Leg &leg = relay.legs[legno - 1];
+					if(leg.runId != 0) {
+						///another runner with better time already assigned
+						break;
+					}
 					leg.fullName = q.value("competitorName").toString();
 					leg.firstName = q.value("firstName").toString();
 					leg.lastName = q.value("lastName").toString();
@@ -331,7 +335,8 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 					Relay &relay = relays[i];
 					Leg &leg = relay.legs[legno - 1];
 					if(leg.runId != run_id) {
-						qfError() << "internal error, leg:" << legno << "runId check:" << leg.runId << "should equal" << run_id;
+						break;
+						//qfError() << "internal error, leg:" << legno << "runId check:" << leg.runId << "should equal" << run_id;
 					}
 					else {
 						leg.notfinish = false;
