@@ -417,7 +417,7 @@ void EmmaClient::exportStartListRacomTxt()
 			.join("runs.id", "cards.runId")
 			.where("runs.stageId=" QF_IARG(current_stage));
 	if(is_relays) {
-		qb.select2("relays","number");
+		qb.select2("relays","number, club, name");
 		qb.join("runs.relayId", "relays.id");
 		qb.join("relays.classId", "classes.id");
 		qb.orderBy("runs.leg, relays.number ASC");
@@ -447,6 +447,10 @@ void EmmaClient::exportStartListRacomTxt()
 		if (startTimeCard == 61166)
 			startTimeCard = 0;
 		QString name = q2.value("competitors.lastName").toString() + " " + q2.value("competitors.firstName").toString();
+		if (is_relays) {
+			name.resize(14, ' ');
+			name = name + " (" + q2.value("relays.club").toString() + " " + q2.value("relays.name").toString() + ")";
+		}
 		QString clas = q2.value("classes.name").toString();
 		clas.remove(" ");
 		QString reg = q2.value("competitors.registration").toString();
