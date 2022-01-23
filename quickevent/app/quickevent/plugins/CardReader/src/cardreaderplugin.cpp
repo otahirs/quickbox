@@ -499,15 +499,6 @@ bool CardReaderPlugin::processCardToRunAssignment(int card_id, int run_id)
 				processCardToRunAssignment(card_id, run_id);
 			}
 		}
-
-		/// set start time for next leg
-		qf::core::sql::Query qs;
-		qs.execThrow("SELECT finishTimeMs FROM runs"
-				  " WHERE relayId=" + QString::number(relay_id)
-				+ " AND leg=" + QString::number(leg)
-				+ " ORDER BY finishTimeMs");
-		int finish_time = q.value(0).toInt();
-		setStartTimeForNextLeg(relay_id, leg, finish_time);
 	}
 	else {
 		quickevent::core::si::CheckedCard checked_card = checkCard(card_id, run_id);
