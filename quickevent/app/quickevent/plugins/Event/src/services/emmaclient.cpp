@@ -14,6 +14,7 @@
 #include <qf/core/sql/query.h>
 #include <qf/core/sql/connection.h>
 #include <plugins/Runs/src/runsplugin.h>
+#include <plugins/Relays/src/relaysplugin.h>
 
 #include <QDir>
 #include <QFile>
@@ -28,6 +29,7 @@ namespace qfd = qf::qmlwidgets::dialogs;
 namespace qfs = qf::core::sql;
 using qf::qmlwidgets::framework::getPlugin;
 using Event::EventPlugin;
+using Relays::RelaysPlugin;
 using Runs::RunsPlugin;
 
 namespace Event {
@@ -40,17 +42,6 @@ EmmaClient::EmmaClient(QObject *parent)
 
 	m_exportTimer = new QTimer(this);
 	connect(m_exportTimer, &QTimer::timeout, this, &EmmaClient::onExportTimerTimeOut);
-	connect(this, &EmmaClient::statusChanged, [this](Status status) {
-		if(status == Status::Running) {
-			if(settings().exportIntervalSec() > 0) {
-				onExportTimerTimeOut();
-				m_exportTimer->start();
-			}
-		}
-		else {
-			m_exportTimer->stop();
-		}
-	});
 	connect(this, &EmmaClient::settingsChanged, this, &EmmaClient::init, Qt::QueuedConnection);
 
 }
@@ -58,6 +49,20 @@ EmmaClient::EmmaClient(QObject *parent)
 QString EmmaClient::serviceName()
 {
 	return QStringLiteral("EmmaClient");
+}
+
+void EmmaClient::run() {
+	Super::run();
+	// run once immediately without waiting for first timer expiration
+	if(settings().exportIntervalSec() > 0) {
+		onExportTimerTimeOut();
+	}
+	m_exportTimer->start();
+}
+
+void EmmaClient::stop() {
+	Super::stop();
+	m_exportTimer->stop();
 }
 
 void EmmaClient::exportRadioCodesRacomTxt()
@@ -187,7 +192,16 @@ void EmmaClient::exportResultsIofXml3()
 	QString export_dir = ss.exportDir();
 	QString file_name = export_dir + '/' + ss.fileNameBase() + ".results.xml";
 	int current_stage = getPlugin<EventPlugin>()->currentStageId();
-	getPlugin<RunsPlugin>()->exportResultsIofXml30Stage(current_stage, file_name);
+	bool is_relays = getPlugin<EventPlugin>()->eventConfig()->isRelays();
+
+	QString str = is_relays
+			? getPlugin<RelaysPlugin>()->resultsIofXml30()
+			: getPlugin<RunsPlugin>()->resultsIofXml30Stage(current_stage);
+
+	QFile f(file_name);
+	if(f.open(QFile::WriteOnly)) {
+		f.write(str.toUtf8());
+	}
 }
 
 void EmmaClient::exportStartListIofXml3()
@@ -198,7 +212,16 @@ void EmmaClient::exportStartListIofXml3()
 	QString export_dir = ss.exportDir();
 	QString file_name = export_dir + '/' + ss.fileNameBase() + ".startlist.xml";
 	int current_stage = getPlugin<EventPlugin>()->currentStageId();
-	getPlugin<RunsPlugin>()->exportStartListStageIofXml30(current_stage, file_name);
+	bool is_relays = getPlugin<EventPlugin>()->eventConfig()->isRelays();
+
+	QString str = is_relays
+			? getPlugin<RelaysPlugin>()->startListIofXml30()
+			: getPlugin<RunsPlugin>()->startListStageIofXml30(current_stage);
+
+	QFile f(file_name);
+	if(f.open(QFile::WriteOnly)) {
+		f.write(str.toUtf8());
+	}
 }
 
 bool EmmaClient::createExportDir()
@@ -273,9 +296,6 @@ void EmmaClient::init()
 	if(ss.exportIntervalSec() > 0) {
 		m_exportTimer->setInterval(ss.exportIntervalSec() * 1000);
 	}
-	else {
-		m_exportTimer->stop();
-	}
 }
 
 bool EmmaClient::preExport()
@@ -290,9 +310,6 @@ bool EmmaClient::preExport()
 
 void EmmaClient::onExportTimerTimeOut()
 {
-	if(status() != Status::Running)
-		return;
-
 	if (!preExport())
 		return;
 
@@ -347,34 +364,34 @@ void EmmaClient::exportFinishRacomTxt()
 			.orderBy("runs.finishTimeMs ASC ")
 			.orderBy("runs.id ASC");
 	q2.execThrow(qb.toString());
-	int lastSi = 0;
+	int last_si = 0;
 	while(q2.next()) {
 		int si = q2.value("runs.siId").toInt();
-		int finTime = q2.value("runs.finishTimeMs").toInt();
-		bool isMisPunch = q2.value("runs.misPunch").toBool();
-		bool isBadCheck = q2.value("runs.badCheck").toBool();
-		bool isDisq = q2.value("runs.disqualified").toBool();
-		bool isRunning = q2.value("runs.isRunning").toBool();
-		bool notCompeting = q2.value("runs.notCompeting").toBool();
-		int cardsId = q2.value("cards.id").toInt();
+		int fin_time = q2.value("runs.finishTimeMs").toInt();
+		bool is_mis_punch = q2.value("runs.misPunch").toBool();
+		bool is_bad_check = q2.value("runs.badCheck").toBool();
+		bool is_disq = q2.value("runs.disqualified").toBool();
+		bool is_running = q2.value("runs.isRunning").toBool();
+		bool not_competing = q2.value("runs.notCompeting").toBool();
+		int cards_id = q2.value("cards.id").toInt();
 
-		if (si == 0 || lastSi == si)
+		if (si == 0 || last_si == si)
 			continue; // without si or duplicate readout are unusable
-		lastSi = si;
+		last_si = si;
 		QString s = QString("%1").arg(si , 8, 10, QChar(' '));
 		s += QStringLiteral(": FIN/");
-		int msec = start00 + finTime;
+		int msec = start00 + fin_time;
 		QTime tm = QTime::fromMSecsSinceStartOfDay(msec);
 		s += tm.toString(QStringLiteral("HH:mm:ss.zzz"));
 		s += '0';
 		s += '/';
-		if (!isRunning) {
+		if (!is_running) {
 			s += QStringLiteral("DNS ");
-		} else if (finTime > 0) {
-			if (notCompeting) {
+		} else if (fin_time > 0) {
+			if (not_competing) {
 				s += QStringLiteral("NC  ");
-			} else if (isDisq) {
-				if (isMisPunch || isBadCheck)
+			} else if (is_disq) {
+				if (is_mis_punch || is_bad_check)
 					s += QStringLiteral("MP  ");
 				else
 					s += QStringLiteral("DISQ");
@@ -382,7 +399,7 @@ void EmmaClient::exportFinishRacomTxt()
 				//checked_card is OK
 				s += QStringLiteral("O.K.");
 			}
-		} else if (cardsId == 0) {
+		} else if (cards_id == 0) {
 			continue; // skip if not yet readout
 		} else {
 			// DidNotFinish
@@ -417,7 +434,7 @@ void EmmaClient::exportStartListRacomTxt()
 			.join("runs.id", "cards.runId")
 			.where("runs.stageId=" QF_IARG(current_stage));
 	if(is_relays) {
-		qb.select2("relays","number, club, name");
+		qb.select2("relays","number");
 		qb.join("runs.relayId", "relays.id");
 		qb.join("relays.classId", "classes.id");
 		qb.orderBy("runs.leg, relays.number ASC");
@@ -431,62 +448,63 @@ void EmmaClient::exportStartListRacomTxt()
 	qfDebug() << qb.toString();
 	qfs::Query q2;
 	q2.execThrow(qb.toString());
-	int lastId = -1;
-	QMap <int,int> startTimesRelays;
+	int last_id = -1;
+	QMap <int,int> start_times_relays;
 	while(q2.next()) {
 		int id = q2.value("runs.competitorId").toInt();
-		if (id == lastId)
+		if (id == last_id)
 			continue;
-		bool isRunning = (q2.value("runs.isrunning").isNull()) ? false : q2.value("runs.isrunning").toBool();
-		if (!isRunning)
+		bool is_running = (q2.value("runs.isrunning").isNull()) ? false : q2.value("runs.isrunning").toBool();
+		if (!is_running)
 			continue;
-		lastId = id;
+		last_id = id;
 		int si = q2.value("runs.siId").toInt();
-		int startTime = q2.value("runs.startTimeMs").toInt();
-		int startTimeCard = q2.value("cards.startTime").toInt();
-		if (startTimeCard == 61166)
-			startTimeCard = 0;
+		int start_time = q2.value("runs.startTimeMs").toInt();
+		bool start_time_card_null = q2.value("runs.startTimeMs").isNull();
+		int start_time_card = q2.value("cards.startTime").toInt();
+		if (start_time_card == 61166 || start_time_card_null)
+			start_time_card = 0;
 		QString name = q2.value("competitors.lastName").toString() + " " + q2.value("competitors.firstName").toString();
-		if (is_relays) {
-			name.resize(14, ' ');
-			name = name + " (" + q2.value("relays.club").toString() + " " + q2.value("relays.name").toString() + ")";
-		}
-		QString clas = q2.value("classes.name").toString();
-		clas.remove(" ");
+		QString class_name = q2.value("classes.name").toString();
+		class_name.remove(" ");
+		if (class_name.isEmpty())
+			continue;
 		QString reg = q2.value("competitors.registration").toString();
 		name = name.leftJustified(22,QChar(' '),true);
+		int id_or_bib = id;
 		if (is_relays)
 		{
 			int leg = q2.value("runs.leg").toInt();
-			clas = QString("%1 %2").arg(clas).arg(leg);
-			clas = clas.leftJustified(7,QChar(' '),true);
+			class_name = QString("%1 %2").arg(class_name).arg(leg);
+			class_name = class_name.leftJustified(7,QChar(' '),true);
 			reg = reg.left(3);
 			reg = reg.leftJustified(7,QChar(' '),true);
 			// EmmaClient uses for all relays start time of 1st leg
 			int rel_num =  q2.value("relays.number").toInt();
-			if (leg == 1 && rel_num != 0) {
-				startTimesRelays.insert(rel_num,startTime);
-			} else if (rel_num != 0) {
-				auto it = startTimesRelays.find(rel_num);
-				if (it != startTimesRelays.end())
-					startTime = it.value();
+			if (leg == 1 && rel_num > 0) {
+				start_times_relays.insert(rel_num,start_time);
+			} else if (rel_num > 0) {
+				auto it = start_times_relays.find(rel_num);
+				if (it != start_times_relays.end())
+					start_time = it.value();
 			}
+			id_or_bib = (rel_num > 0) ? rel_num : 10000+id; // when no number, use id with offset
 		}
 		else
 		{
-			clas = clas.leftJustified(7,QChar(' '),true);
+			class_name = class_name.leftJustified(7,QChar(' '),true);
 			reg = reg.leftJustified(7,QChar(' '),true);
 		}
 
-		int msec = startTime;
-		if (startTimeCard != 0)
+		int msec = start_time;
+		if (start_time_card != 0 && !start_time_card_null && !is_relays)
 		{
-			// has start in si card (P, T, HDR)
-			startTimeCard *= 1000; // msec
-			startTimeCard -= start00;
-			if (startTimeCard < 0) // 12h format
-				startTimeCard += (12*60*60*1000);
-			msec = startTimeCard;
+			// has start in si card (P, T, HDR) & not used in relays
+			start_time_card *= 1000; // msec
+			start_time_card -= start00;
+			if (start_time_card < 0) // 12h format
+				start_time_card += (12*60*60*1000);
+			msec = start_time_card;
 		}
 
 		QString tm2;
@@ -516,7 +534,7 @@ void EmmaClient::exportStartListRacomTxt()
 
 		if (id != 0) // filter bad data
 		{
-			QString s = QString("%1 %2 %3 %4 %5 %6").arg(id , 5, 10, QChar(' ')).arg(si, 8, 10, QChar(' ')).arg(clas).arg(reg).arg(name).arg(tm2);
+			QString s = QString("%1 %2 %3 %4 %5 %6").arg(id_or_bib , 5, 10, QChar(' ')).arg(si, 8, 10, QChar(' ')).arg(class_name).arg(reg).arg(name).arg(tm2);
 			ts << s << "\n";
 		}
 	}

@@ -30,6 +30,7 @@
 #include <qf/core/sql/connection.h>
 #include <qf/core/sql/transaction.h>
 #include <qf/core/utils/fileutils.h>
+#include <plugins/Event/src/services/oresultsclient.h>
 
 #include <QInputDialog>
 #include <QSqlDatabase>
@@ -363,6 +364,9 @@ void EventPlugin::onInstalled()
 	}
 	fwk->menuBar()->actionForPath("view/toolbar")->addActionInto(tb->toggleViewAction());
 
+	services::OResultsClient *oresults_client = new services::OResultsClient(this);
+	services::Service::addService(oresults_client);
+
 	services::EmmaClient *emma_client = new services::EmmaClient(this);
 	services::Service::addService(emma_client);
 
@@ -417,7 +421,6 @@ void EventPlugin::editStage()
 	if(stage_id < 0)
 		return;
 	Event::StageWidget *w = new Event::StageWidget();
-	w->setWindowTitle(tr("Edit Stage"));
 	auto fwk = qf::qmlwidgets::framework::MainWindow::frameWork();
 	qfd::Dialog dlg(QDialogButtonBox::Save | QDialogButtonBox::Cancel, fwk);
 	dlg.setDefaultButton(QDialogButtonBox::Save);
@@ -754,6 +757,7 @@ bool EventPlugin::createEvent(const QString &event_name, const QVariantMap &even
 		qfd::Dialog dlg(fwk);
 		dlg.setButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
 		EventDialogWidget *event_w = new EventDialogWidget();
+		event_w->setWindowTitle("Create event");
 		event_w->setEventId(event_id);
 		event_w->loadParams(new_params);
 		dlg.setCentralWidget(event_w);
@@ -808,6 +812,7 @@ bool EventPlugin::createEvent(const QString &event_name, const QVariantMap &even
 		qfInfo().nospace() << create_script.join(";\n") << ';';
 		qfs::Query q(conn);
 		do {
+			qfLogScope("createEvent");
 			qfs::Transaction transaction(conn);
 			ok = run_sql_script(q, create_script);
 			if(!ok)
@@ -854,6 +859,7 @@ void EventPlugin::editEvent()
 	qfd::Dialog dlg(fwk);
 	dlg.setButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
 	EventDialogWidget *event_w = new EventDialogWidget();
+	event_w->setWindowTitle("Edit event");
 	event_w->setEventId(eventName());
 	event_w->setEventIdEditable(false);
 	event_w->loadParams(eventConfig()->value("event").toMap());
@@ -1039,9 +1045,16 @@ static QString copy_sql_table(const QString &table_name, const QSqlRecord &dest_
 			QString fld_name = fld.name();
 			//qfDebug() << "copy:" << fld_name << from_q.value(fld_name);
 			QVariant v;
-			if((fld_name.compare(QLatin1String("isRunning"), Qt::CaseInsensitive) == 0) && is_import_offrace) {
-				bool offrace = from_q.value(QStringLiteral("offRace")).toBool();
-				v = offrace? QVariant(): QVariant(true);
+			if((fld_name.compare(QLatin1String("isRunning"), Qt::CaseInsensitive) == 0)) {
+				if(is_import_offrace) {
+					bool offrace = from_q.value(QStringLiteral("offRace")).toBool();
+					v = offrace? QVariant(): QVariant(true);
+				}
+				else {
+					// since db ver 1.8.0
+					// isRunning cannot be NULL, convert NULL to false during import
+					v = from_q.value(fld_name).toBool();
+				}
 			}
 			else {
 				v = from_q.value(fld_name);
@@ -1098,6 +1111,7 @@ void EventPlugin::exportEvent_qbe()
 			qfd::MessageBox::showError(fwk, tr("Open Database Error: %1").arg(ex_conn.errorString()));
 			return;
 		}
+		//qfLogScope("exportEvent_qbe");
 		qfs::Transaction transaction(ex_conn);
 
 		DbSchema *db_schema = dbSchema();
@@ -1153,9 +1167,9 @@ void EventPlugin::importEvent_qbe()
 	event_name = QInputDialog::getText(fwk, tr("Query"), tr("Event will be imported as ID:"), QLineEdit::Normal, event_name).trimmed();
 	if(event_name.isEmpty())
 		return;
-	const std::regex psqlschema_regex("[A-Za-z][A-Za-z0-9_]*");
-	if(!std::regex_match(event_name.toStdString(), psqlschema_regex)) {
-		qfd::MessageBox::showError(fwk, tr("PostgreSql schema must start with letter and it may contain letters, digits and underscores only."));
+	const std::regex psqlschema_regex("[a-z][a-z0-9_]*");
+	if(connectionType() == ConnectionType::SqlServer && !std::regex_match(event_name.toStdString(), psqlschema_regex)) {
+		qfd::MessageBox::showError(fwk, tr("PostgreSQL schema must start with small letter and it may contain small letters, digits and underscores only."));
 		return;
 	}
 	QStringList existing_events = (connectionType() == ConnectionType::SingleFile)? existingFileEventNames(): existingSqlEventNames();

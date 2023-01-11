@@ -6,7 +6,7 @@
 #include <QDateTime>
 #include <QTimer>
 
-#define logCardRead qfInfo
+#define logCardRead() qfCInfo("CardRead")
 
 namespace siut {
 
@@ -93,6 +93,25 @@ void SiTaskSetDirectRemoteMode::onSiMessageReceived(const SIMessageData &msg)
 //===============================================================
 // CmdStationInfo
 //===============================================================
+QString SiStationConfig::toString() const
+{
+	QString msg = tr(""
+					 "Station number: {{StationNumber}}\n"
+					 "Extended mode: {{ExtendedMode}}\n"
+					 "Auto send: {{AutoSend}}\n"
+					 "Handshake: {{HandShake}}\n"
+					 "Password access: {{PasswordAccess}}\n"
+					 "Read out after punch: {{ReadOutAfterPunch}}\n"
+					 "");
+	msg.replace("{{StationNumber}}", QString::number(stationNumber()));
+	msg.replace("{{ExtendedMode}}", (flags() & (unsigned)siut::SiStationConfig::Flag::ExtendedMode)? tr("True"): tr("False"));
+	msg.replace("{{AutoSend}}", (flags() & (unsigned)siut::SiStationConfig::Flag::AutoSend)? tr("True"): tr("False"));
+	msg.replace("{{HandShake}}", (flags() & (unsigned)siut::SiStationConfig::Flag::HandShake)? tr("True"): tr("False"));
+	msg.replace("{{PasswordAccess}}", (flags() & (unsigned)siut::SiStationConfig::Flag::PasswordAccess)? tr("True"): tr("False"));
+	msg.replace("{{ReadOutAfterPunch}}", (flags() & (unsigned)siut::SiStationConfig::Flag::ReadOutAfterPunch)? tr("True"): tr("False"));
+	return msg;
+}
+
 void SiTaskStationConfig::start()
 {
 	QByteArray ba;
@@ -480,33 +499,47 @@ void SiTaskReadCard6::onSiMessageReceived(const SIMessageData &msg)
 		}
 		else {
 			if(block_number >= 1 && block_number <= 7) {
-				QVariantList punches = m_card.punches();
-				int pcnt = punches.count();
-				for (int i = 0; pcnt + i < m_punchCnt && i < 32; ++i) {
-					SIPunch p(data, base + i*4);
-					//qfInfo() << "B1" << p.code();
-					punches << p;
-				}
-				m_card.setPunches(punches);
-				if(m_withAutosend) {
-					if(m_card.punchCount() >= m_punchCnt) {
-						finishAndDestroy(true, m_card);
+				if(m_card.cardNumber() > 0) {
+					QVariantList punches = m_card.punches();
+					int pcnt = punches.count();
+					for (int i = 0; pcnt + i < m_punchCnt && i < 32; ++i) {
+						SIPunch p(data, base + i*4);
+						//qfInfo() << "B1" << p.code();
+						punches << p;
+					}
+					m_card.setPunches(punches);
+					logCardRead() << punches.count() << "of" << m_punchCnt << "punches read.";
+					if(m_withAutosend) {
+						// it seems that we have to always expect blocks 0,6,7 in autosend mode
+						if(m_card.punchCount() >= m_punchCnt) {
+							logCardRead() << "All the punches in auto-send received, DONE";
+							finishAndDestroy(true, m_card);
+						}
+					}
+					else {
+						if(m_card.punchCount() < m_punchCnt) {
+							int bn = block_number + 1;
+							if(bn >= 8)
+								bn = 2;
+							logCardRead() << "Asking for next block:" << bn;
+							sendCommand((int)SIMessageData::Command::GetSICard6, QByteArray(1, (char)bn));
+						}
+						else {
+							logCardRead() << "All the punches received, DONE";
+							finishAndDestroy(true, m_card);
+						}
 					}
 				}
 				else {
-					if(m_card.punchCount() < m_punchCnt) {
-						int bn = block_number + 1;
-						if(bn >= 8)
-							bn = 2;
-						sendCommand((int)SIMessageData::Command::GetSICard6, QByteArray(1, (char)bn));
-					}
-					else {
-						finishAndDestroy(true, m_card);
-					}
+					qfError() << "Card6 unexpected block number:" << block_number
+							  << ", block #0 must be read first. See https://github.com/Quick-Event/quickbox/issues/732";
+					if(m_withAutosend)
+						qfError() << "Try to switch auto-send mode off.";
+					abort();
 				}
 			}
 			else {
-				qfError() << "Card8 unexpected block number:" << block_number;
+				qfError() << "Card6 unexpected block number:" << block_number;
 				abort();
 			}
 		}

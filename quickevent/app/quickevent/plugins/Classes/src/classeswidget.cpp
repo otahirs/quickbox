@@ -243,16 +243,8 @@ void ClassesWidget::settleDownInPartWidget(quickevent::gui::PartWidget *part_wid
 	{
 		qfw::Action *a = new qfw::Action(tr("Classes &layout"));
 		a->setShortcut(tr("Ctrl+L"));
+		connect(a, &QAction::triggered, this, &ClassesWidget::edit_classes_layout);
 		a_edit->addActionInto(a);
-		connect(a, &qfw::Action::triggered, [this]()
-		{
-			auto *w = new drawing::DrawingGanttWidget;
-			qf::qmlwidgets::dialogs::Dialog dlg(this);
-			//dlg.setButtons(QDialogButtonBox::Save);
-			dlg.setCentralWidget(w);
-			w->load(selectedStageId());
-			dlg.exec();
-		});
 	}
 
 	qfw::Action *a_import = part_widget->menuBar()->actionForPath("import", true);
@@ -307,6 +299,25 @@ void ClassesWidget::edit_codes()
 	dlg.setCentralWidget(w);
 	//auto *bt_apply = dlg.buttonBox()->button(QDialogButtonBox::Apply);
 	//connect(bt_apply, &QPushButton::clicked, this, &MainWindow::askUserToRestartAppServer);
+	dlg.exec();
+	reload();
+}
+
+void ClassesWidget::edit_classes_layout()
+{
+	qf::core::sql::Query q;
+	q.exec("SELECT id FROM classdefs WHERE (startIntervalMin IS NULL OR startIntervalMin = 0) AND stageId = " + QString::number(selectedStageId()));
+	if(q.next()) {
+		qfd::MessageBox::showWarning(
+			qfw::framework::MainWindow::frameWork(),
+			tr("Classes without start interval won't be displayed.\n"
+			   "Consider setting \"Interval\" column for all classes before continuing."));
+	}
+	auto *w = new drawing::DrawingGanttWidget;
+	qf::qmlwidgets::dialogs::Dialog dlg(this);
+	//dlg.setButtons(QDialogButtonBox::Save);
+	dlg.setCentralWidget(w);
+	w->load(selectedStageId());
 	dlg.exec();
 	reload();
 }
@@ -417,18 +428,9 @@ void ClassesWidget::importCourses(const QList<ImportCourseDef> &course_defs, con
 {
 	qf::qmlwidgets::framework::MainWindow *fwk = qf::qmlwidgets::framework::MainWindow::frameWork();
 	QString msg = tr("Delete all courses definitions for stage %1?").arg(selectedStageId());
-	if(qfd::MessageBox::askYesNo(fwk, msg, false)) {
-		/*
-		QVariantList courses;
-		for(const auto &cd : course_defs)
-			courses << cd;
-		QVariantList codes;
-		for(const auto &cd : code_defs)
-			codes << cd;
-		*/
-		getPlugin<ClassesPlugin>()->createCourses(selectedStageId(), course_defs, code_defs);
-		reload();
-	}
+	bool delete_current = qfd::MessageBox::askYesNo(fwk, msg, false);
+	getPlugin<ClassesPlugin>()->createCourses(selectedStageId(), course_defs, code_defs, delete_current);
+	reload();
 }
 
 static QString normalize_course_name(const QString &course_name)

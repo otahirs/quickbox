@@ -1,7 +1,6 @@
 #include "competitorswidget.h"
 #include "ui_competitorswidget.h"
 #include "competitorwidget.h"
-#include "lentcardswidget.h"
 #include "stationsbackupmemorywidget.h"
 
 #include "competitordocument.h"
@@ -66,7 +65,7 @@ CompetitorsWidget::CompetitorsWidget(QWidget *parent) :
 	m->addColumn("competitorName", tr("Name"));
 	m->addColumn("registration", tr("Reg"));
 	m->addColumn("siId", tr("SI")).setReadOnly(true).setCastType(qMetaTypeId<quickevent::core::si::SiId>());
-	m->addColumn("ranking", tr("Ranking"));
+	m->addColumn("ranking", tr("Ranking pos")).setToolTip("Runner's position in CZ ranking.");
 	m->addColumn("note", tr("Note"));
 	ui->tblCompetitors->setTableModel(m);
 	m_competitorsModel = m;
@@ -100,7 +99,7 @@ void CompetitorsWidget::settleDownInPartWidget(quickevent::gui::PartWidget *part
 		}
 		{
 			m_cbxClasses = new qfw::ForeignKeyComboBox();
-			m_cbxClasses->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLength);
+			m_cbxClasses->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
 			m_cbxClasses->setMinimumWidth(fontMetrics().horizontalAdvance('X') * 15);
 #else
@@ -122,19 +121,6 @@ void CompetitorsWidget::settleDownInPartWidget(quickevent::gui::PartWidget *part
 		//a->setShortcut("ctrl+L");
 		connect(a, &qfw::Action::triggered, this, &CompetitorsWidget::report_competitorsStatistics);
 		act_print->addActionInto(a);
-	}
-
-	qf::qmlwidgets::Action *act_cards = part_widget->menuBar()->actionForPath("cards");
-	act_cards->setText(tr("&Cards"));
-	{
-		qf::qmlwidgets::Action *a = new qf::qmlwidgets::Action("lentCards", tr("Cards to rent"));
-		act_cards->addActionInto(a);
-		connect(a, &qf::qmlwidgets::Action::triggered, [this]() {
-			qf::qmlwidgets::dialogs::Dialog dlg(this);
-			auto *w = new LentCardsWidget();
-			dlg.setCentralWidget(w);
-			dlg.exec();
-		});
 	}
 
 	qf::qmlwidgets::Action *act_stations = part_widget->menuBar()->actionForPath("stations");
@@ -399,8 +385,9 @@ void CompetitorsWidget::report_competitorsStatistics()
 	//props["isBreakAfterEachClass"] = (opts.breakType() != (int)quickevent::gui::ReportOptionsDialog::BreakType::None);
 	//props["isColumnBreak"] = (opts.breakType() == (int)quickevent::gui::ReportOptionsDialog::BreakType::Column);
 	props["stageCount"] = stage_cnt;
+	QString rep_fn = getPlugin<CompetitorsPlugin>()->findReportFile("competitorsStatistics.qml");
 	qf::qmlwidgets::reports::ReportViewWidget::showReport(this
-								, getPlugin<CompetitorsPlugin>()->qmlDir() + "/competitorsStatistics.qml"
+								, rep_fn
 								, tt.toVariant()
 								, tr("Competitors statistics")
 								, "competitorsStatistics"

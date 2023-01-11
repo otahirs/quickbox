@@ -1,7 +1,6 @@
 #include "runswidget.h"
 #include "ui_runswidget.h"
 #include "runstablemodel.h"
-#include "runstableitemdelegate.h"
 #include "runsplugin.h"
 
 #include <quickevent/core/og/sqltablemodel.h>
@@ -223,7 +222,7 @@ void RunsWidget::settleDownInPartWidget(quickevent::gui::PartWidget *part_widget
 			QVariantMap props;
 			props["stageId"] = selectedStageId();
 			qf::qmlwidgets::reports::ReportViewWidget::showReport(fwk
-										, getPlugin<RunsPlugin>()->qmlDir() + "/competitorsWithCardRent.qml"
+										, getPlugin<RunsPlugin>()->findReportFile("competitorsWithCardRent.qml")
 										, QVariant()
 										, tr("Competitors with rented cards")
 										, "printReport"
@@ -263,6 +262,14 @@ void RunsWidget::settleDownInPartWidget(quickevent::gui::PartWidget *part_widget
 			auto *a = new qfw::Action(tr("&IOF-XML 3.0"));
 			connect(a, &qfw::Action::triggered, this, &RunsWidget::export_startList_stage_iofxml30);
 			m_export_stlist_xml->addActionInto(a);
+		}
+	}
+	auto *m_export_stlist_csv = m_stlist->addMenuInto("csv", tr("&CSV"));
+	{
+		{
+			auto *a = new qfw::Action(tr("&SIME startlist (Starter Clock)"));
+			connect(a, &qfw::Action::triggered, this, &RunsWidget::export_startList_stage_csv_sime);
+			m_export_stlist_csv->addActionInto(a);
 		}
 	}
 
@@ -317,7 +324,7 @@ void RunsWidget::settleDownInPartWidget(quickevent::gui::PartWidget *part_widget
 	}
 	{
 		m_cbxClasses = new qfw::ForeignKeyComboBox();
-		m_cbxClasses->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLength);
+		m_cbxClasses->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
 		m_cbxClasses->setMinimumWidth(fontMetrics().horizontalAdvance('X') * 15);
 #else
@@ -427,15 +434,17 @@ QList< QList<int> > RunsWidget::runnersByClubSortedByCount(int stage_id, int cla
 QList<int> RunsWidget::runsForClass(int stage_id, int class_id, const QString &extra_where_condition, const QString &order_by)
 {
 	qfLogFuncFrame();
-	QList<int> ret = competitorsForClass(stage_id, class_id, extra_where_condition, order_by).values();
+	QList<int> ret;
+	for(const CompetitorForClass &cc : competitorsForClass(stage_id, class_id, extra_where_condition, order_by))
+		ret << cc.runId;
 	return ret;
 }
 
-QMap<int, int> RunsWidget::competitorsForClass(int stage_id, int class_id, const QString &extra_where_condition, const QString &order_by)
+QList<RunsWidget::CompetitorForClass> RunsWidget::competitorsForClass(int stage_id, int class_id, const QString &extra_where_condition, const QString &order_by)
 {
 	qfLogFuncFrame() << "stage:" << stage_id << "class:" << class_id;
 	bool is_relays = getPlugin<EventPlugin>()->eventConfig()->isRelays();
-	QMap<int, int> ret;
+	QList<RunsWidget::CompetitorForClass> ret;
 	qf::core::sql::QueryBuilder qb;
 	qb.select2("runs", "id, competitorId")
 			.from("competitors")
@@ -453,7 +462,7 @@ QMap<int, int> RunsWidget::competitorsForClass(int stage_id, int class_id, const
 	qfs::Query q;
 	q.exec(qb.toString(), qf::core::Exception::Throw);
 	while(q.next()) {
-		ret[q.value("competitorId").toInt()] = q.value("id").toInt();
+		ret << CompetitorForClass{ .competitorId = q.value("competitorId").toInt(), .runId = q.value("id").toInt() };
 	}
 	return ret;
 }
@@ -702,7 +711,9 @@ void RunsWidget::on_btDraw_clicked()
 			else if(draw_method == DrawMethod::Handicap) {
 				int stage_count = getPlugin<EventPlugin>()->eventConfig()->stageCount();
 				qf::core::utils::Table results = getPlugin<RunsPlugin>()->nstagesClassResultsTable(stage_count - 1, class_id);
-				QMap<int, int> competitor_to_run = competitorsForClass(stage_count, class_id);
+				QMap<int, int> competitor_to_run;
+				for(const auto &cc : competitorsForClass(stage_count, class_id))
+					competitor_to_run[cc.competitorId] = cc.runId;
 				//int n = 0;
 				for (int i = 0; i < results.rowCount(); ++i) {
 					qf::core::utils::TableRow r = results.row(i);
@@ -719,7 +730,9 @@ void RunsWidget::on_btDraw_clicked()
 				runners_draw_ids << competitor_to_run.values();
 			}
 			else if(draw_method == DrawMethod::StageReverseOrder) {
-				QMap<int, int> competitor_to_run = competitorsForClass(stage_id, class_id);
+				QMap<int, int> competitor_to_run;
+				for(const auto &cc : competitorsForClass(stage_id, class_id))
+					competitor_to_run[cc.competitorId] = cc.runId;
 				qf::core::sql::QueryBuilder qb1;
 				qb1.select2("runs", "competitorId")
 						//.select2("competitors", "lastName")
@@ -927,6 +940,7 @@ void RunsWidget::on_btDrawRemove_clicked()
 void RunsWidget::onCbxStageCurrentIndexChanged()
 {
 	getPlugin<RunsPlugin>()->setSelectedStageId(m_cbxStage->currentData().toInt());
+	reload();
 	qfInfo() << "selected stage:" << selectedStageId();
 }
 
@@ -944,3 +958,22 @@ void RunsWidget::export_startList_stage_iofxml30()
 	getPlugin<RunsPlugin>()->exportStartListStageIofXml30(stage_id, fn);
 }
 
+
+void RunsWidget::export_startList_stage_csv_sime()
+{
+	qff::MainWindow *fwk = qff::MainWindow::frameWork();
+	quickevent::gui::ReportOptionsDialog dlg(fwk);
+	dlg.setPersistentSettingsId("startListCsvSimeReportOptions");
+	dlg.loadPersistentSettings();
+	dlg.setStartListOptionsVisible(true);
+	dlg.setVacantsVisible(false);
+	dlg.setPageLayoutVisible(false);
+	dlg.setStartTimeFormatVisible(false);
+	dlg.setColumnCountEnable(false);
+	if(dlg.exec()) {
+		QString fn = getSaveFileName("startlist.csv", selectedStageId());
+		if(fn.isEmpty())
+			return;
+		getPlugin<RunsPlugin>()->exportStartListCurrentStageCsvSime(fn, dlg.isStartListPrintStartNumbers(), dlg.sqlWhereExpression());
+	}
+}
