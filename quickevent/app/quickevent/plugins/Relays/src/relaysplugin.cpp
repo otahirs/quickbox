@@ -643,9 +643,9 @@ QString RelaysPlugin::resultsIofXml30()
 
 			qf::core::utils::TreeTable tt_legs = tt_teams_row.table();
 			for (int k = 0; k < tt_legs.rowCount(); ++k) {
-				int leg = k + 1;
 				QF_TIME_SCOPE("exporting leg: " + QString::number(leg));
 				const qf::core::utils::TreeTableRow tt_leg_row = tt_legs.row(k);
+				int leg = tt_leg_row.value(QStringLiteral("leg")).toInt();
 				QVariantList member_result{"TeamMemberResult"};
 				append_list(member_result,
 							QVariantList{"Person",
@@ -656,8 +656,8 @@ QString RelaysPlugin::resultsIofXml30()
 								}
 							} );
 				QVariantList person_result{"Result"};
-				append_list(person_result, QVariantList{"Leg", k+1 } );
-				append_list(person_result, QVariantList{"BibNumber", QString::number(relay_number) + '.' + QString::number(k+1)});
+				append_list(person_result, QVariantList{"Leg", leg} );
+				append_list(person_result, QVariantList{"BibNumber", QString::number(relay_number) + '.' + QString::number(leg)});
 				int run_id = tt_leg_row.value(QStringLiteral("runId")).toInt();
 				int stime = 0, ftime = 0, time_msec = 0, siId = 0;
 				if(run_id > 0) {
@@ -843,9 +843,9 @@ QString RelaysPlugin::startListIofXml30()
 
 			qf::core::utils::TreeTable tt_legs = tt_teams_row.table();
 			for (int k = 0; k < tt_legs.rowCount(); ++k) {
-				int leg = k + 1;
-				QF_TIME_SCOPE("exporting leg: " + QString::number(leg));
 				const qf::core::utils::TreeTableRow tt_leg_row = tt_legs.row(k);
+				int leg = tt_leg_row.value(QStringLiteral("leg")).toInt();
+				QF_TIME_SCOPE("exporting leg: " + QString::number(leg));
 				QVariantList member_start{"TeamMemberStart"};
 				append_list(member_start,
 							QVariantList{"Person",
@@ -856,8 +856,8 @@ QString RelaysPlugin::startListIofXml30()
 								}
 							} );
 				QVariantList start{"Start"};
-				append_list(start, QVariantList{"Leg", k+1 } );
-				append_list(start, QVariantList{"BibNumber", QString::number(relay_number) + '.' + QString::number(k+1)});
+				append_list(start, QVariantList{"Leg", leg} );
+				append_list(start, QVariantList{"BibNumber", QString::number(relay_number) + '.' + QString::number(leg)});
 				append_list(start, QVariantList{"StartTime", datetime_to_string(start00.addMSecs(tt_leg_row.value(QStringLiteral("runs.startTimeMs")).toInt()))});
 				int course_id = getPlugin<RunsPlugin>()->courseForRelay(relay_number, leg);
 				{
