@@ -457,6 +457,7 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 			const Leg &leg = relay.legs[j];
 			int ix2 = tt2.appendRow();
 			qf::core::utils::TreeTableRow tt2_row = tt2.row(ix2);
+			tt2_row.setValue("leg", j + 1);
 			tt2_row.setValue("competitorName", leg.fullName);
 			tt2_row.setValue("firstName", leg.firstName);
 			tt2_row.setValue("lastName", leg.lastName);
