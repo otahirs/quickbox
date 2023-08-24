@@ -244,14 +244,12 @@ bool XmlImporter::importEntries(QXmlStreamReader &reader, const XmlCreators crea
 		else if (reader.name() == "TeamEntry") {
 			QString relay_name;
 			QString relay_club;
-			QString relay_number;
 			std::map<int, SPerson> legs;
 			QString country_code, country,class_name;
 			QString club_name,club_country_code,club_country;
 			while(reader.readNextStartElement()) {
 				if (reader.name() == "Name") {
 					relay_name = reader.readElementText();
-					relay_number = relay_name.right(1);
 				}
 				else if (reader.name() == "TeamEntryPerson") {
 					SPerson person;
@@ -310,9 +308,9 @@ bool XmlImporter::importEntries(QXmlStreamReader &reader, const XmlCreators crea
 				transaction.rollback();
 				return false;
 			}
-			qfInfo() << relay_club << "|" << relay_name << "|" << relay_number << "|" << class_name << "|" << class_id;
+			qfInfo() << relay_club << "|" << relay_name << "|" << class_name << "|" << class_id;
 			q.execThrow("SELECT id FROM relays WHERE"
-						" name='" + relay_number + "'"
+						" name='" + relay_name + "'"
 									   " AND club='" + relay_club + "'"
 									   " AND classId=" + QString::number(class_id));
 			int relay_id;
@@ -324,7 +322,7 @@ bool XmlImporter::importEntries(QXmlStreamReader &reader, const XmlCreators crea
 				q.execThrow("INSERT INTO relays (classId, club, name, importId) VALUES ("
 							+ QString::number(class_id) + ", "
 							+ "'" + relay_club + "', "
-							+ "'" + relay_number + "', "
+							+ "'" + relay_name + "', "
 							+ "2"
 							+ ")");
 				relay_id = q.lastInsertId().toInt();
