@@ -1,6 +1,7 @@
 add_library(libqfcore SHARED
     src/core/collator.cpp
     src/core/exception.cpp
+    src/core/log.cpp
     src/core/logentrymap.cpp
     src/core/stacktrace.cpp
     src/core/string.cpp
@@ -32,6 +33,7 @@ add_library(libqfcore SHARED
     src/utils/timescope.cpp
     src/utils/treeitembase.cpp
     src/utils/treetable.cpp
+	images/qfcore_images.qrc
     )
 
 target_link_libraries(libqfcore PUBLIC libnecrolog Qt::Core Qt::Sql PRIVATE Qt::Gui Qt::Qml Qt::Xml libnecrolog)
