@@ -1,5 +1,6 @@
 <!-- PROJECT SHIELDS -->
 [![Build status][build-shield]][build-url]
+[![Translation status][weblate-shield]][weblate-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Contributors][contributors-shield]][contributors-url]
 [![Issues][issues-shield]][issues-url]
@@ -19,7 +20,7 @@ The QuickBox is built upon the Qt framework, targeted for Linux and Windows and 
 * QuickHttpd - show start lists and results via webserver
 
 ### Features
-* competitors managment
+* competitors management
 * SI card readout
 * receipts print
 * course import (OCAD TXT | [IOF XML](https://github.com/international-orienteering-federation/datastandard-v3))
@@ -43,7 +44,24 @@ For now, most of the [documentation](https://github.com/Quick-Event/quickbox/wik
 * [Často kladené otázky, FAQ](https://github.com/Quick-Event/quickbox/wiki/%C4%8Casto-kladen%C3%A9-ot%C3%A1zky%2C-FAQ)
 
 ---
-## QuickEvent installation
+## Build
+Qt6 version
+```
+git clone https://github.com/Quick-Event/quickbox.git
+cd quickbox
+git switch qt6
+git submodule update --init --recursive
+cmake -S . -B build -DCMAKE_PREFIX_PATH:PATH=~/app/qt/6.5.1/gcc_64 -DQF_BUILD_QML_PLUGINS=ON --install-prefix `pwd`/build/install
+cd build
+cmake --build . -j8
+# to install
+cmake --install .
+# to run
+LD_LIBRARY_PATH=../lib:~/app/qt5/6.5.1/gcc_64/lib ./install/quickevent
+```
+If you want to use system Qt for build, then remove CLI option `-DCMAKE_PREFIX_PATH:PATH=/home/fanda/app/qt5/6.5.1/gcc_64`
+
+## Install
 #### Windows
 1. download the installation package (*.exe) from https://github.com/Quick-Event/quickbox/releases
 2. follow the installation wizard (keeping the default installation path is recommended)
@@ -127,11 +145,13 @@ Distributed under the GNU GPL v2.0 License. See `LICENSE` for more information.
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [build-shield]: https://github.com/Quick-Event/quickbox/actions/workflows/c-cpp.yml/badge.svg?branch=master
 [build-url]: https://github.com/Quick-Event/quickbox/actions?query=branch%3Amaster
-[contributors-shield]: https://img.shields.io/github/contributors/Quick-Event/quickbox?style=flat-square
+[weblate-shield]: https://hosted.weblate.org/widgets/quickbox/-/svg-badge.svg
+[weblate-url]: https://hosted.weblate.org/engage/quickbox/
+[contributors-shield]: https://img.shields.io/github/contributors/Quick-Event/quickbox
 [contributors-url]: https://github.com/Quick-Event/quickbox/graphs/contributors
-[stars-shield]: https://img.shields.io/github/stars/Quick-Event/quickbox?style=flat-square
+[stars-shield]: https://img.shields.io/github/stars/Quick-Event/quickbox
 [stars-url]: https://github.com/Quick-Event/quickbox/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Quick-Event/quickbox?style=flat-square
+[issues-shield]: https://img.shields.io/github/issues/Quick-Event/quickbox
 [issues-url]: https://github.com/Quick-Event/quickbox/issues
-[license-shield]: https://img.shields.io/github/license/Quick-Event/quickbox?style=flat-square
+[license-shield]: https://img.shields.io/github/license/Quick-Event/quickbox
 [license-url]: https://github.com/Quick-Event/quickbox/blob/master/LICENSE

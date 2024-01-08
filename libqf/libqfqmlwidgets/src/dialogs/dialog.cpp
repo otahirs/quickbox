@@ -168,28 +168,7 @@ void Dialog::loadPersistentSettings()
 		}
 	}
 }
-#if 0
-bool Dialog::doneRequest(int result)
-{
-	qfLogFuncFrame() << "result:" << result;
-	qf::qmlwidgets::framework::DialogWidget *dw = dialogWidget();
-	if(dw) {
-		return dw->acceptDialogDone(result);
-		/*
-		QMetaObject::invokeMethod(dw, "dialogDoneRequest_qml",
-								  Q_RETURN_ARG(QVariant, ret),
-								  Q_ARG(QVariant, result));
-		*/
-	}
-	return true;
-}
-#endif
-/*
-QVariant Dialog::doneRequest_qml(const QVariant &result)
-{
-	return doneRequest(result.toBool());
-}
-*/
+
 void Dialog::savePersistentSettings()
 {
 	QString path = persistentSettingsPath();
@@ -207,7 +186,7 @@ void Dialog::updateLayout()
 	QLayout *ly_orig = layout();
 	QF_SAFE_DELETE(ly_orig);
 	QBoxLayout *ly_root = new QVBoxLayout();
-	ly_root->setMargin(0);
+	ly_root->setContentsMargins(0, 0, 0, 0);
 	ly_root->setSpacing(0);
 	setLayout(ly_root);
 
@@ -234,7 +213,7 @@ void Dialog::updateLayout()
 	}
 
 	QBoxLayout *ly = new QVBoxLayout();
-	ly->setMargin(4);
+	ly->setContentsMargins(4, 4, 4, 4);
 	ly_root->addLayout(ly);
 
 	if(m_centralWidget) {

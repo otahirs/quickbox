@@ -83,15 +83,7 @@ RunsTableWidget::RunsTableWidget(QWidget *parent) :
 		m_runsModel->reload();
 	});
 
-	connect(ui->tblRuns->horizontalHeader(), &QHeaderView::sortIndicatorChanged, [this](int logical_index, Qt::SortOrder order)
-	{
-		auto cd = m_runsModel->columnDefinition(logical_index);
-		bool is_sort_start_time_asc = (cd.matchesSqlId(QStringLiteral("runs.startTimeMs"))
-									   && order == Qt::AscendingOrder
-									   && ui->tblRuns->filterString().isEmpty());
-		m_runsTableItemDelegate->setStartTimeHighlightVisible(is_sort_start_time_asc);
-		ui->tblRuns->setDragEnabled(is_sort_start_time_asc);
-	});
+	connect(ui->tblRuns->horizontalHeader(), &QHeaderView::sortIndicatorChanged, this, &RunsTableWidget::updateStartTimeHighlight);
 
 	connect(ui->tblRuns, &qfw::TableView::editCellRequest, this, [this](QModelIndex index) {
 		auto col = index.column();
@@ -120,6 +112,18 @@ RunsTableWidget::RunsTableWidget(QWidget *parent) :
 RunsTableWidget::~RunsTableWidget()
 {
 	delete ui;
+}
+
+void RunsTableWidget::updateStartTimeHighlight() const
+{
+	auto logical_index = ui->tblRuns->horizontalHeader()->sortIndicatorSection();
+	auto order = ui->tblRuns->horizontalHeader()->sortIndicatorOrder();
+	auto cd = m_runsModel->columnDefinition(logical_index);
+	bool is_sort_start_time_asc = (cd.matchesSqlId(QStringLiteral("runs.startTimeMs"))
+								   && order == Qt::AscendingOrder
+								   && ui->tblRuns->filterString().isEmpty());
+	m_runsTableItemDelegate->setStartTimeHighlightVisible(is_sort_start_time_asc);
+	ui->tblRuns->setDragEnabled(is_sort_start_time_asc);
 }
 
 void RunsTableWidget::clear()
@@ -193,6 +197,7 @@ void RunsTableWidget::reload(int stage_id, int class_id, bool show_offrace, cons
 	m_runsTableItemDelegate->setHighlightedClassId(class_id, stage_id);
 	m_runsModel->setQueryBuilder(qb, false);
 	m_runsModel->reload();
+	updateStartTimeHighlight();
 
 	QHeaderView *hh = ui->tblRuns->horizontalHeader();
 	hh->setSectionHidden(RunsTableModel::col_runs_isRunning, !show_offrace);
@@ -238,6 +243,7 @@ void RunsTableWidget::reload()
 {
 	runsModel()->reload();
 	m_runsTableItemDelegate->reloadHighlightedClassId();
+	updateStartTimeHighlight();
 }
 
 void RunsTableWidget::editCompetitor(const QVariant &id, int mode)
@@ -266,17 +272,28 @@ void RunsTableWidget::onCustomContextMenuRequest(const QPoint &pos)
 		<< &a_clear_start_times;
 	QAction *a = QMenu::exec(lst, ui->tblRuns->viewport()->mapToGlobal(pos));
 	if(a == &a_load_card) {
-		//qf::qmlwidgets::dialogs::MessageBox::showError(this, "Not implemented yet.");
 		qf::qmlwidgets::framework::MainWindow *fwk = qf::qmlwidgets::framework::MainWindow::frameWork();
 		int curr_ix = 0;
 		QList<int> sel_ixs = ui->tblRuns->selectedRowsIndexes();
+		QList<int> runid_to_reload;
 		for(int ix : sel_ixs) {
 			qf::core::utils::TableRow row = ui->tblRuns->tableRow(ix);
 			int run_id = row.value(QStringLiteral("runs.id")).toInt();
 			fwk->showProgress(tr("Reloading times for %1").arg(row.value(QStringLiteral("competitorName")).toString()), ++curr_ix, sel_ixs.count());
 			bool ok = getPlugin<RunsPlugin>()->reloadTimesFromCard(run_id);
+			//qfInfo() << ix << run_id << ok << row.value(QStringLiteral("competitorName")).toString();
 			if(ok)
-				ui->tblRuns->reloadRow(ix);
+				runid_to_reload << run_id;
+		}
+		auto *m = ui->tblRuns->tableModel();
+		for(int runid : runid_to_reload) {
+			// we cannot reload row-ix, because proxy-model might be sorted according to reloaded value
+			for(int i = 0; i < m->rowCount(); ++i) {
+				int id = m->value(i, QStringLiteral("runs.id")).toInt();
+				if(id == runid) {
+					m->reloadRow(i);
+				}
+			}
 		}
 		fwk->hideProgress();
 	}
