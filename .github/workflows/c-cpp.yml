@@ -2,9 +2,9 @@
 name: Build
 on:
   push:
-    branches: [ master, kratkyden ]
+    branches: [ master ]
   pull_request:
-    branches: [ master, kratkyden ]
+    branches: [ master ]
 
 env:
   QT_VERSION: '5.15.2'
