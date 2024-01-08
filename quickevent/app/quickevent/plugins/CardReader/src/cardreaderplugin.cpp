@@ -4,6 +4,7 @@
 #include "cardreaderwidget.h"
 #include "cardreadersettingspage.h"
 #include "services/racomclient.h"
+#include "services/qropunch.h"
 
 #include "../../Core/src/coreplugin.h"
 #include "../../Core/src/widgets/settingsdialog.h"
@@ -61,6 +62,8 @@ void CardReaderPlugin::onInstalled()
 
 	services::RacomClient *racom_client = new services::RacomClient(this);
 	Event::services::Service::addService(racom_client);
+	services::QrOPunch *qr_o_punch = new services::QrOPunch(this);
+	Event::services::Service::addService(qr_o_punch);
 
 	auto core_plugin = getPlugin<Core::CorePlugin>();
 	core_plugin->settingsDialog()->addPage(new CardReaderSettingsPage());
@@ -375,7 +378,6 @@ void CardReaderPlugin::updateCheckedCardValuesSql(const quickevent::core::si::Ch
 		q.execThrow("SELECT * FROM runs WHERE id=" + QString::number(run_id));
 		if(q.next()) {
 			if(q.value("disqualifiedByOrganizer").toBool()) should_be_disq = true;
-			if(q.value("notCompeting").toBool()) should_be_disq = true;
 			if(q.value("notStart").toBool()) should_be_disq = true;
 			if(q.value("notFinish").toBool()) should_be_disq = true;
 		}
@@ -508,18 +510,27 @@ bool CardReaderPlugin::processCardToRunAssignment(int card_id, int run_id)
 		updateCheckedCardValuesSql(checked_card);
 		getPlugin<EventPlugin>()->emitDbEvent(Event::EventPlugin::DBEVENT_CARD_PROCESSED_AND_ASSIGNED, checked_card, true);
 
-		/// if next leg is finished and has not start time set, proces it too
-		/// This covers cases when next leg is read-out before this one
 		q.execThrow("SELECT id, startTimeMs, finishTimeMs FROM runs"
 				 " WHERE relayId=" + QString::number(relay_id)
 			   + " AND leg=" + QString::number(leg+1));
 		while(q.next()) {
-			start_time = q.value(1);
-			int finish_time = q.value(2).toInt();
-			if(finish_time > 0 && start_time.isNull()) {
-				run_id = q.value(0).toInt();
-				card_id = getPlugin<RunsPlugin>()->cardForRun(run_id);
-				processCardToRunAssignment(card_id, run_id);
+			int next_leg_run_id = q.value(0).toInt();
+			QVariant next_leg_start_time = q.value(1);
+			int next_leg_finish_time = q.value(2).toInt();
+			if(next_leg_start_time.isNull()) {
+				// if next leg is finished and has not start time set, proces it too
+				// This covers cases when next leg is read-out before this one
+				if(next_leg_finish_time > 0) {
+					int next_leg_card_id = getPlugin<RunsPlugin>()->cardForRun(next_leg_run_id);
+					processCardToRunAssignment(next_leg_card_id, next_leg_run_id);
+				}
+				// set start time for next leg, and publish the change
+				else {
+					int new_next_leg_start_time = checked_card.finishTimeMs();
+					setStartTime(relay_id, leg + 1, new_next_leg_start_time);
+					int competitor_id = getPlugin<RunsPlugin>()->competitorForRun(next_leg_run_id);
+					getPlugin<EventPlugin>()->emitDbEvent(Event::EventPlugin::DBEVENT_COMPETITOR_EDITED, competitor_id);
+				}
 			}
 		}
 	}

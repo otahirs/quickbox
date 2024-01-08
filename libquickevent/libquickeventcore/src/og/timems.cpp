@@ -8,6 +8,8 @@ namespace quickevent {
 namespace core {
 namespace og {
 
+//bool TimeMs::m_oneTenthSecPrecision = false;
+
 TimeMs::TimeMs()
 	: m_msec(0), m_isValid(false)
 {
@@ -106,11 +108,11 @@ TimeMs TimeMs::fromString(const QString &time_str)
 
 int TimeMs::fixTimeWrapAM(int time1_msec, int time2_msec)
 {
-	constexpr int hr12ms = 12 * 60 * 60 * 1000;
+	constexpr int HR_12_MSEC = 12 * 60 * 60 * 1000;
 	while(time2_msec < time1_msec)
-		time2_msec += hr12ms;
-	while(time1_msec <= time2_msec - hr12ms)
-		time2_msec -= hr12ms;
+		time2_msec += HR_12_MSEC;
+	while(time1_msec <= time2_msec - HR_12_MSEC)
+		time2_msec -= HR_12_MSEC;
 	return time2_msec;
 }
 
@@ -124,11 +126,13 @@ void TimeMs::registerQVariantFunctions()
 	static bool registered = false;
 	if(!registered) {
 		registered = true;
+#if QT_VERSION_MAJOR < 6
 		{
 			bool ok = QMetaType::registerComparators<TimeMs>();
 			if(!ok)
 				qfError() << "Error registering comparators for quickevent::core::og::TimeMs!";
 		}
+#endif
 		{
 			bool ok = QMetaType::registerConverter<TimeMs, int>([](const TimeMs &t) -> int {return t.msec();});
 			if(!ok)

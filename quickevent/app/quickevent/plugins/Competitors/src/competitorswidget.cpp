@@ -63,9 +63,10 @@ CompetitorsWidget::CompetitorsWidget(QWidget *parent) :
 	m->addColumn("classes.name", tr("Class"));
 	m->addColumn("competitors.startNumber", tr("SN", "start number")).setToolTip(tr("Start number"));
 	m->addColumn("competitorName", tr("Name"));
-	m->addColumn("registration", tr("Reg"));
+	m->addColumn("registration", tr("Reg")).setToolTip(tr("Czech registration number"));;
+	m->addColumn("iofId", tr("IOF ID")).setToolTip(tr("IOF ID number"));;
 	m->addColumn("siId", tr("SI")).setReadOnly(true).setCastType(qMetaTypeId<quickevent::core::si::SiId>());
-	m->addColumn("ranking", tr("Ranking pos")).setToolTip("Runner's position in CZ ranking.");
+	m->addColumn("ranking", tr("Ranking pos")).setToolTip(tr("Runner's position in CZ ranking."));
 	m->addColumn("note", tr("Note"));
 	ui->tblCompetitors->setTableModel(m);
 	m_competitorsModel = m;
@@ -353,8 +354,8 @@ void CompetitorsWidget::report_competitorsStatistics()
 		QString prefix = "e" + QString::number(stage_id) + "_";
 		QString col_runs_count = prefix + "runCount";
 		QString col_map_count = prefix + "mapCount";
-		tt.appendColumn(col_runs_count, QVariant::Int);
-		tt.appendColumn(col_map_count, QVariant::Int);
+		tt.appendColumn(col_runs_count, QMetaType(QMetaType::Int));
+		tt.appendColumn(col_map_count, QMetaType(QMetaType::Int));
 		{
 			qfs::QueryBuilder qb;
 			qb.select2("classes", "name")

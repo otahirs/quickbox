@@ -6,6 +6,9 @@
 
 #include <qf/core/string.h>
 #include <qf/core/assert.h>
+#include <qf/core/sql/query.h>
+
+#include <quickevent/core/codedef.h>
 
 #include <QSettings>
 #include <QShowEvent>
@@ -35,14 +38,33 @@ ReportOptionsDialog::ReportOptionsDialog(QWidget *parent)
 	ui->grpLegs->setVisible(false);
 	ui->grpResultOptions->setVisible(false);
 	ui->grpStartTimes->setVisible(false);
+	ui->grpStartlistOrderBy->setVisible(false);
+	ui->grpClassStartSelection->setVisible(false);
 	ui->btRegExp->setEnabled(QSqlDatabase::database().driverName().endsWith(QLatin1String("PSQL"), Qt::CaseInsensitive));
 
+	// fill start numbers from courses
+	QString query_str = "SELECT codes.code FROM codes"
+						" ORDER BY id";
+	qf::core::sql::Query q;
+	q.exec(query_str, qf::core::Exception::Throw);
+	while (q.next()) {
+		auto code = q.value(0).toInt();
+		if(auto n = core::CodeDef::codeToStartNumber(code); n.has_value()) {
+			ui->cbxStartNumber->addItem(QString("Start %1").arg(n.value()),n.value());
+		}
+	}
+	if (ui->cbxStartNumber->count() < 1) {
+		ui->grpClassStartSelection->setEnabled(false);
+		ui->grpClassStartSelection->setChecked(false);
+		ui->cbxStartNumber->clear();
+	}
 	connect(ui->btSaveAsDefault, &QPushButton::clicked, [this]() {
 		savePersistentSettings();
 	});
 	connect(this, &ReportOptionsDialog::persistentSettingsIdChanged, [this]() {
 		loadPersistentSettings();
 	});
+	connect(ui->btReset, &QPushButton::clicked, this, &ReportOptionsDialog::resetPersistentSettings);
 
 	connect(this, &ReportOptionsDialog::startListOptionsVisibleChanged, ui->grpStartOptions, &QGroupBox::setVisible);
 	connect(this, &ReportOptionsDialog::classFilterVisibleChanged, ui->grpClassFilter, &QGroupBox::setVisible);
@@ -54,6 +76,8 @@ ReportOptionsDialog::ReportOptionsDialog(QWidget *parent)
 	connect(this, &ReportOptionsDialog::columnCountEnableChanged, ui->edColumnCount, &QGroupBox::setEnabled);
 	connect(this, &ReportOptionsDialog::resultOptionsVisibleChanged, ui->grpResultOptions, &QGroupBox::setVisible);
 	connect(this, &ReportOptionsDialog::startTimeFormatVisibleChanged, ui->grpStartTimes, &QGroupBox::setVisible);
+	connect(this, &ReportOptionsDialog::startlistOrderFirstByVisibleChanged, ui->grpStartlistOrderBy, &QGroupBox::setVisible);
+	connect(this, &ReportOptionsDialog::classStartSelectionVisibleChanged, ui->grpClassStartSelection, &QGroupBox::setVisible);
 
 	//connect(ui->edStagesCount, &QSpinBox::valueChanged, [this](int n) {
 	//	qfInfo() << "stage cnt value changed:" << n;
@@ -84,6 +108,7 @@ void ReportOptionsDialog::setClassNamesFilter(const QStringList &class_names)
 	ui->btClassNames->setChecked(true);
 	ui->chkClassFilterDoesntMatch->setChecked(false);
 	ui->edFilter->setText(class_names.join(','));
+	ui->grpClassStartSelection->setChecked(false);
 }
 
 int ReportOptionsDialog::stagesCount() const
@@ -121,13 +146,33 @@ bool ReportOptionsDialog::isStartListPrintStartNumbers() const
 	return ui->chkStartOpts_PrintStartNumbers->isChecked();
 }
 
-QString ReportOptionsDialog::sqlWhereExpression() const
+QString ReportOptionsDialog::sqlWhereExpression(const int stage_id) const
 {
 	const Options opts = options();
-	return sqlWhereExpression(opts);
+	return sqlWhereExpression(opts,stage_id);
 }
 
-QString ReportOptionsDialog::sqlWhereExpression(const ReportOptionsDialog::Options &opts)
+QString ReportOptionsDialog::getClassesForStartNumber(const int number, const int stage_id)
+{
+	QString classes;
+	if (number > 0) {
+		int start_code = core::CodeDef::startNumberToCode(number);
+
+		QString query_str = "SELECT classes.name FROM classes, classdefs, coursecodes, codes"
+							" WHERE classdefs.classId = classes.id AND classdefs.courseId = coursecodes.courseId AND"
+							" coursecodes.position = 0 AND coursecodes.codeId = codes.id AND classdefs.stageId = %2 AND codes.code = %1";
+		qf::core::sql::Query q;
+		q.exec(query_str.arg(start_code).arg(stage_id), qf::core::Exception::Throw);
+		while (q.next()) {
+			if (!classes.isEmpty())
+				classes += ",";
+			classes += q.value(0).toString();
+		}
+	}
+	return classes;
+}
+
+QString ReportOptionsDialog::sqlWhereExpression(const ReportOptionsDialog::Options &opts,const int stage_id)
 {
 	if(opts.isUseClassFilter()) {
 		QString filter_str = opts.classFilter();
@@ -155,6 +200,13 @@ QString ReportOptionsDialog::sqlWhereExpression(const ReportOptionsDialog::Optio
 				return ret;
 			}
 		}
+
+	}
+	else if (opts.isUseClassStartSelectionFilter()) {
+		qf::core::String s = getClassesForStartNumber(opts.classStartNumber(),stage_id);
+		QStringList sl = s.splitAndTrim(',');
+		QString ret = QString("classes.name IN('%2')").arg(sl.join("','"));
+		return ret;
 	}
 	return QString();
 }
@@ -194,7 +246,6 @@ void ReportOptionsDialog::setOptions(const ReportOptionsDialog::Options &options
 	ui->edPageHeight->setValue(options.pageHeight());
 	ui->edHorizontalMargin->setValue(options.horizontalMargin());
 	ui->edVerticalMargin->setValue(options.verticalMargin());
-	//ui->chkShirinkPageWidthToColumnCount->setChecked(options.isShirinkPageWidthToColumnCount());
 	ui->grpClassFilter->setChecked(options.isUseClassFilter());
 	ui->chkClassFilterDoesntMatch->setChecked(options.isInvertClassFilter());
 	ui->edFilter->setText(options.classFilter());
@@ -202,6 +253,10 @@ void ReportOptionsDialog::setOptions(const ReportOptionsDialog::Options &options
 	ui->btWildCard->setChecked(filter_type == FilterType::WildCard);
 	ui->btRegExp->setChecked(filter_type == FilterType::RegExp);
 	ui->btClassNames->setChecked(filter_type == FilterType::ClassName);
+	if (ui->grpClassStartSelection->isEnabled() && ui->grpClassStartSelection->isVisible())
+		ui->grpClassStartSelection->setChecked(options.isUseClassStartSelectionFilter());
+	auto index = ui->cbxStartNumber->findData(options.classStartNumber());
+	ui->cbxStartNumber->setCurrentIndex(index);
 	ui->chkStartOpts_PrintVacants->setChecked(options.isStartListPrintVacants());
 	ui->chkStartOpts_PrintStartNumbers->setChecked(options.isStartListPrintStartNumbers());
 	ui->edStartersOptionsLineSpacing->setValue(options.startersOptionsLineSpacing());
@@ -210,6 +265,10 @@ void ReportOptionsDialog::setOptions(const ReportOptionsDialog::Options &options
 	StartTimeFormat start_time_format = (StartTimeFormat)options.startTimeFormat();
 	ui->btStartTimes1->setChecked(start_time_format == StartTimeFormat::RelativeToClassStart);
 	ui->btStartTimes2->setChecked(start_time_format == StartTimeFormat::DayTime);
+	StartlistOrderFirstBy start_order_by = (StartlistOrderFirstBy)options.startlistOrderFirstBy();
+	ui->btStartOrder1->setChecked(start_order_by == StartlistOrderFirstBy::ClassName);
+	ui->btStartOrder2->setChecked(start_order_by == StartlistOrderFirstBy::StartTime);
+	ui->btStartOrder3->setChecked(start_order_by == StartlistOrderFirstBy::Names);
 }
 
 ReportOptionsDialog::Options ReportOptionsDialog::options() const
@@ -227,10 +286,11 @@ ReportOptionsDialog::Options ReportOptionsDialog::options() const
 	opts.setPageHeight(ui->edPageHeight->value());
 	opts.setHorizontalMargin(ui->edHorizontalMargin->value());
 	opts.setVerticalMargin(ui->edVerticalMargin->value());
-	//opts.setShirinkPageWidthToColumnCount(ui->chkShirinkPageWidthToColumnCount->isChecked());
 	opts.setUseClassFilter(ui->grpClassFilter->isChecked());
 	opts.setInvertClassFilter(ui->chkClassFilterDoesntMatch->isChecked());
 	opts.setClassFilter(ui->edFilter->text());
+	opts.setClassStartNumber(ui->cbxStartNumber->currentData().toInt());
+	opts.setUseClassStartSelectionFilter(ui->grpClassStartSelection->isChecked());
 	FilterType filter_type =  ui->btWildCard->isChecked()? FilterType::WildCard: ui->btRegExp->isChecked()? FilterType::RegExp: FilterType::ClassName;
 	opts.setClassFilterType((int)filter_type);
 	opts.setStartListPrintVacants(isStartListPrintVacants());
@@ -242,6 +302,8 @@ ReportOptionsDialog::Options ReportOptionsDialog::options() const
 	opts.setResultExcludeDisq(ui->chkExcludeDisq->isChecked());
 	StartTimeFormat start_time_format =  ui->btStartTimes1->isChecked()? StartTimeFormat::RelativeToClassStart: StartTimeFormat::DayTime;
 	opts.setStartTimeFormat((int)start_time_format);
+	StartlistOrderFirstBy start_order_by = startlistOrderFirstBy();
+	opts.setStartlistOrderFirstBy((int)start_order_by);
 	return opts;
 }
 
@@ -311,5 +373,22 @@ ReportOptionsDialog::StartTimeFormat ReportOptionsDialog::startTimeFormat() cons
 	return ui->btStartTimes1->isChecked()? StartTimeFormat::RelativeToClassStart: StartTimeFormat::DayTime;
 }
 
+ReportOptionsDialog::StartlistOrderFirstBy ReportOptionsDialog::startlistOrderFirstBy() const
+{
+	StartlistOrderFirstBy start_order_by = StartlistOrderFirstBy::ClassName;
+	if (ui->btStartOrder2->isChecked())
+		start_order_by = StartlistOrderFirstBy::StartTime;
+	else if (ui->btStartOrder3->isChecked())
+		start_order_by = StartlistOrderFirstBy::Names;
+	return start_order_by;
+}
+
+void ReportOptionsDialog::resetPersistentSettings()
+{
+    Options new_options;
+    setOptions(new_options);
+    savePersistentSettings();
+}
 
 }}
+

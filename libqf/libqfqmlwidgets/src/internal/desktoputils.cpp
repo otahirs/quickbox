@@ -1,7 +1,6 @@
 #include "desktoputils.h"
 
 #include <QApplication>
-#include <QDesktopWidget>
 #include <QScreen>
 
 namespace qf {
@@ -22,6 +21,7 @@ QRect DesktopUtils::moveRectToVisibleDesktopScreen(const QRect &r)
 		ret.moveTopLeft(screen_rect.topLeft());
 	return ret;
 }
+
 
 } // namespace internal
 } // namespace qmlwidgets

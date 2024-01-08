@@ -53,7 +53,7 @@ QString OResultsClient::serviceName()
 
 void OResultsClient::run() {
 	Super::run();
-	onExportTimerTimeOut();
+	exportStartListIofXml3([=](){exportResultsIofXml3();});
 	m_exportTimer->start();
 }
 
@@ -74,9 +74,8 @@ void OResultsClient::exportResultsIofXml3()
 	sendFile("results upload", "/results", str);
 }
 
-void OResultsClient::exportStartListIofXml3()
+void OResultsClient::exportStartListIofXml3(std::function<void()> on_success)
 {
-
 	int current_stage = getPlugin<EventPlugin>()->currentStageId();
 	bool is_relays = getPlugin<EventPlugin>()->eventConfig()->isRelays();
 
@@ -84,7 +83,7 @@ void OResultsClient::exportStartListIofXml3()
 			? getPlugin<RelaysPlugin>()->startListIofXml30()
 			: getPlugin<RunsPlugin>()->startListStageIofXml30(current_stage);
 
-	sendFile("start list upload", "/start-lists", str);
+	sendFile("start list upload", "/start-lists", str, on_success);
 }
 
 qf::qmlwidgets::framework::DialogWidget *OResultsClient::createDetailWidget()
@@ -110,19 +109,18 @@ void OResultsClient::loadSettings()
 	init();
 }
 
-void OResultsClient::sendFile(QString name, QString request_path, QString file) {
+void OResultsClient::sendFile(QString name, QString request_path, QString file, std::function<void()> on_success) {
 
 	QHttpMultiPart *multi_part = new QHttpMultiPart(QHttpMultiPart::FormDataType);
 
 	QHttpPart api_key_part;
-	auto api_key = settings().apiKey();
 	api_key_part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"apiKey\""));
-	api_key_part.setBody(api_key.toUtf8());
+	api_key_part.setBody(apiKey().toUtf8());
 
 	QHttpPart file_part;
-	file_part.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/xml"));
+	file_part.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/zlib"));
 	file_part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"file\""));
-	file_part.setBody(file.toUtf8());
+	file_part.setBody(zlibCompress(file.toUtf8()));
 
 	multi_part->append(api_key_part);
 	multi_part->append(file_part);
@@ -130,8 +128,9 @@ void OResultsClient::sendFile(QString name, QString request_path, QString file) 
 	QUrl url(API_URL + request_path);
 	QNetworkRequest request(url);
 	QNetworkReply *reply = m_networkManager->post(request, multi_part);
+	multi_part->setParent(reply);
 
-	connect(reply, &QNetworkReply::finished, reply, [reply, name]()
+	connect(reply, &QNetworkReply::finished, this, [=]()
 	{
 		if(reply->error()) {
 			auto err_msg = "OReuslts.eu [" + name + "]: ";
@@ -142,6 +141,8 @@ void OResultsClient::sendFile(QString name, QString request_path, QString file) 
 		}
 		else {
 			qfInfo() << "OReuslts.eu [" + name + "]: success";
+			if (on_success)
+				on_success();
 		}
 		reply->deleteLater();
 	});
@@ -163,14 +164,27 @@ void OResultsClient::onDbEventNotify(const QString &domain, int connection_id, c
 	}
 }
 
+QString OResultsClient::apiKey() const
+{
+	int current_stage = getPlugin<EventPlugin>()->currentStageId();
+	return getPlugin<EventPlugin>()->eventConfig()->value("oresults.apiKey.E" + QString::number(current_stage)).toString();
+}
+
+void OResultsClient::setApiKey(QString apiKey)
+{
+	int current_stage = getPlugin<EventPlugin>()->currentStageId();
+	getPlugin<EventPlugin>()->eventConfig()->setValue("oresults.apiKey.E" + QString::number(current_stage), apiKey);
+	getPlugin<EventPlugin>()->eventConfig()->save("oresults");
+}
+
 void OResultsClient::sendCompetitorChange(QString xml) {
 	QUrl url(API_URL + "/meos");
 	QNetworkRequest request(url);
-	request.setRawHeader("pwd", settings().apiKey().toUtf8());
-	request.setHeader( QNetworkRequest::ContentTypeHeader, "application/xml" );
-	QNetworkReply *reply = m_networkManager->post(request, xml.toUtf8());
+	request.setRawHeader("pwd", apiKey().toUtf8());
+	request.setHeader( QNetworkRequest::ContentTypeHeader, "application/zlib" );
+	QNetworkReply *reply = m_networkManager->post(request, zlibCompress(xml.toUtf8()));
 
-	connect(reply, &QNetworkReply::finished, reply, [reply]()
+	connect(reply, &QNetworkReply::finished, this, [=]()
 	{
 		if(reply->error()) {
 			qfError() << "OReuslts.eu [competitor change]:" << reply->errorString();
@@ -191,14 +205,8 @@ static void append_list(QVariantList &lst, const QVariantList &new_lst)
 	lst.insert(lst.count(), new_lst);
 }
 
-static bool is_csos_reg(QString &reg)
-{
-	const static std::regex csos_registration_regex("[A-Z]{3}[0-9]{4}");
-	return reg.length() == 7 && std::regex_match(reg.toStdString(), csos_registration_regex);
-}
-
 static int mop_start(int runner_start_ms) {
-	int stage_id = getPlugin<RunsPlugin>()->selectedStageId();
+	int stage_id = getPlugin<EventPlugin>()->currentStageId();
 	QDateTime event_start = getPlugin<EventPlugin>()->stageStartDateTime(stage_id);
 	QDateTime runner_start = event_start.addMSecs(runner_start_ms);
 	return event_start.date().startOfDay().msecsTo(runner_start) / 100;
@@ -235,12 +243,13 @@ void OResultsClient::onCompetitorChanged(int competitor_id)
 	if (competitor_id == 0)
 		return;
 
-	int stage_id = getPlugin<RunsPlugin>()->selectedStageId();
+	int stage_id = getPlugin<EventPlugin>()->currentStageId();
 	qf::core::sql::Query q;
 	q.exec("SELECT competitors.registration, "
 		   "competitors.startNumber, "
 		   "competitors.lastName || ' ' || competitors.firstName AS name, "
 		   "classes.id AS classId, "
+		   "runs.id AS runId, "
 		   "runs.siId, "
 		   "runs.disqualified, "
 		   "runs.disqualifiedByOrganizer, "
@@ -257,7 +266,7 @@ void OResultsClient::onCompetitorChanged(int competitor_id)
 		   "INNER JOIN classes ON classes.id = competitors.classId OR classes.id = relays.classId  "
 		   "WHERE competitors.id=" QF_IARG(competitor_id) " AND runs.stageId=" QF_IARG(stage_id), qf::core::Exception::Throw);
 	if(q.next()) {
-		QString registration = q.value("registration").toString();
+		int run_id = q.value("runId").toInt();
 		int start_num = q.value("startNumber").toInt();
 		QString name = q.value("name").toString();
 		QString class_id = q.value("classId").toString();
@@ -272,11 +281,7 @@ void OResultsClient::onCompetitorChanged(int competitor_id)
 		int start_time = q.value("startTimeMs").toInt();
 		int running_time = q.value("timeMs").toInt();
 
-		QString runner_id = is_csos_reg(registration) ? registration : QString::number(card_num);
 		int status_code = mop_run_status_code(running_time, isDisq, isDisqByOrganizer, isMissPunch, isBadCheck, isDidNotStart, isDidNotFinish, isNotCompeting);
-
-		if (runner_id.isEmpty() || card_num == 0)
-			return;
 
 		QVariantMap competitor {
 			{"stat", status_code},
@@ -293,13 +298,13 @@ void OResultsClient::onCompetitorChanged(int competitor_id)
 		QVariantList xml_root{"MOPDiff",
 			QVariantMap {
 				{"xmlns", "http://www.melin.nu/mop"},
-				{"creator", "QuickEvent"},
+				{"creator", QStringLiteral("QuickEvent %1").arg(QCoreApplication::applicationVersion())},
 				{"createTime", QDateTime::currentDateTimeUtc().toString(Qt::ISODate)}
 			}
 		};
 		QVariantList xml_competitor{"cmp",
 			QVariantMap {
-				{"id", runner_id },
+				{"id", run_id },
 				{"card", card_num },
 			},
 			QVariantList {"base",
@@ -313,6 +318,15 @@ void OResultsClient::onCompetitorChanged(int competitor_id)
 		auto xml_paylaod = qf::core::utils::HtmlUtils::fromXmlList(xml_root, opts);
 		sendCompetitorChange(xml_paylaod);
 	}
+}
+
+QByteArray OResultsClient::zlibCompress(QByteArray data)
+{
+	QByteArray compressedData = qCompress(data);
+	// strip the 4-byte length put on by qCompress
+	// internally qCompress uses zlib
+	compressedData.remove(0, 4);
+	return compressedData;
 }
 
 }}

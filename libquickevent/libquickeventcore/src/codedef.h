@@ -6,6 +6,8 @@
 
 #include <QChar>
 
+#include <optional>
+
 namespace quickevent {
 namespace core {
 	
@@ -41,6 +43,9 @@ public:
 	static int codeFromString(const QString &code_str);
 	static QString codeToString(int code);
 	static Type codeToType(int code);
+	static std::optional<int> codeToStartNumber(int code);
+	static std::optional<int> codeToFinishNumber(int code);
+	static int startNumberToCode(int start);
 
 	QString toString() const;
 };
