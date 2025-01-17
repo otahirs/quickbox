@@ -521,7 +521,7 @@ QVariant RelaysPlugin::startListByClassesTableData(const QString &class_filter)
 	}
 	{
 		qf::core::sql::QueryBuilder qb;
-		qb.select2("competitors", "registration, iofId")
+		qb.select2("competitors", "registration, iofId, country, countryCode")
 			.select("competitors.firstName, competitors.lastName, COALESCE(competitors.lastName, '') || ' ' || COALESCE(competitors.firstName, '') AS competitorName")
 			.select2("runs", "id, leg, siId, startTimeMs")
 			.from("runs")
