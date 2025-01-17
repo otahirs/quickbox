@@ -1,6 +1,7 @@
 message(including $$PWD)
 
 HEADERS += \
+    $$PWD/alphatoioc.h \
     $$PWD/orisimporter.h \
     $$PWD/chooseoriseventdialog.h \
     $$PWD/orisplugin.h \
