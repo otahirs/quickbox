@@ -119,6 +119,7 @@ struct Leg
 	QString iofId;
 	Organization org;
 	QString country;
+	QString countryCode;
 	int runId = 0;
 	//int courseId = 0;
 	int time = 0;
@@ -275,7 +276,7 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 		qfs::QueryBuilder qb;
 		qb.select2("competitors", "id, registration, iofId")
 				.select2("runs", "id, relayId, leg, isRunning")
-				.select2("competitors", "firstName, lastName, club, country")
+				.select2("competitors", "firstName, lastName, club, country, countryCode")
 				.select("COALESCE(competitors.lastName, '') || ' ' || COALESCE(competitors.firstName, '') AS competitorName")
 				.from("runs")
 				.join("runs.competitorId", "competitors.id")
@@ -305,6 +306,7 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 					leg.org.id = club.first;
 					leg.org.shortName = club.second;
 					leg.country = q.value("competitors.country").toString();
+					leg.countryCode = q.value("competitors.countryCode").toString();
 					break;
 				}
 			}
@@ -466,6 +468,7 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 			tt2_row.setValue("orgName", leg.org.name);
 			tt2_row.setValue("orgShortName", leg.org.shortName);
 			tt2_row.setValue("country", leg.country);
+			tt2_row.setValue("countryCode", leg.countryCode);
 			//tt2_row.setValue("courseId", leg.courseId);
 			tt2.setRow(ix2, tt2_row);
 			qfDebug() << '\t' << leg.pos << leg.fullName;
@@ -699,6 +702,14 @@ QString RelaysPlugin::resultsIofXml30()
 				auto family = tt_leg_row.value(QStringLiteral("lastName"));
 				auto given = tt_leg_row.value(QStringLiteral("firstName"));
 				append_list(person, QVariantList{"Name", QVariantList{"Family", family}, QVariantList{"Given", given}});
+				QString country_code = tt_leg_row.value(QStringLiteral("countryCode")).toString();
+				if (!country_code.isEmpty()) {
+					append_list(person,
+						QVariantList{"Nationality",
+							QVariantMap{{"code", country_code}},
+							tt_leg_row.value(QStringLiteral("country"))
+						});
+				}
 				append_list(member_result, person);
 
 				QString club_name = tt_leg_row.value(QStringLiteral("orgName")).toString();
@@ -956,6 +967,14 @@ QString RelaysPlugin::startListIofXml30()
 				auto family = tt_leg_row.value(QStringLiteral("lastName"));
 				auto given = tt_leg_row.value(QStringLiteral("firstName"));
 				append_list(person, QVariantList{"Name", QVariantList{"Family", family}, QVariantList{"Given", given}});
+				QString country_code = tt_leg_row.value(QStringLiteral("countryCode")).toString();
+				if (!country_code.isEmpty()) {
+					append_list(person,
+						QVariantList{"Nationality",
+							QVariantMap{{"code", country_code}},
+							tt_leg_row.value(QStringLiteral("country"))
+						});
+				}
 				append_list(member_start, person);
 
 				QVariantList start{"Start"};
