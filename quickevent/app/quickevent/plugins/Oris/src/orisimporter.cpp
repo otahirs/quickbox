@@ -1,5 +1,6 @@
 #include "chooseoriseventdialog.h"
 #include "orisimporter.h"
+#include "alphatoioc.h"
 
 #include <qf/qmlwidgets/framework/mainwindow.h>
 #include <qf/qmlwidgets/dialogs/dialog.h>
@@ -558,6 +559,7 @@ void OrisImporter::syncEventEntries(int event_id, std::function<void ()> success
 					qfWarning() << "class id:" << class_id << "not found in the class definitions";
 					class_id = 0;
 				}
+				QString country_code = convertToIOC(competitor_o.value(QStringLiteral("Nationality")).toString());
 				doc->setValue("classId", (class_id == 0)? QVariant(QVariant::Int): QVariant(class_id));
 				doc->setSiid(siid);
 				doc->setValue("firstName", first_name);
@@ -565,6 +567,7 @@ void OrisImporter::syncEventEntries(int event_id, std::function<void ()> success
 				doc->setValue("registration", reg_no);
 				doc->setValue("iofId", !iof_id.isEmpty() ? iof_id : QVariant(QVariant::Int));
 				doc->setValue("licence", competitor_o.value(QStringLiteral("Licence")).toString());
+				doc->setValue("countryCode", country_code);
 				doc->setValue("note", note);
 				doc->setValue("importId", import_id);
 				doc->setProperty(KEY_RUNS, runs);
@@ -845,5 +848,4 @@ void OrisImporter::importClubs(std::function<void ()> success_callback)
 		}
 	});
 }
-
 

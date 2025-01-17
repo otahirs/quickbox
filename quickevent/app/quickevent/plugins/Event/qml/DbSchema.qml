@@ -165,6 +165,7 @@ Schema {
 				Field { name: 'licence'; type: String { length: 1 } },
 				Field { name: 'club'; type: String { } },
 				Field { name: 'country'; type: String { } },
+				Field { name: 'countryCode'; type: String { } },
 				Field { name: 'siId'; type: Int { } },
 				Field { name: 'ranking'; type: Int { } },
 				Field { name: 'note'; type: String { } },
@@ -345,6 +346,7 @@ Schema {
 				Field { name: 'licence'; type: String { length: 1 } },
 				Field { name: 'clubAbbr'; type: String { } },
 				Field { name: 'country'; type: String { } },
+				Field { name: 'countryCode'; type: String { } },
 				Field { name: 'siId'; type: Int { } },
 				//Field { name: 'nameSearchKey'; type: String {} },
 				Field { name: 'importId'; type: Int { } }

@@ -119,6 +119,7 @@ struct Leg
 	QString iofId;
 	Organization org;
 	QString country;
+	QString countryCode;
 	int runId = 0;
 	//int courseId = 0;
 	int time = 0;
@@ -275,14 +276,14 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 		qfs::QueryBuilder qb;
 		qb.select2("competitors", "id, registration, iofId")
 				.select2("runs", "id, relayId, leg, isRunning")
-				.select2("competitors", "firstName, lastName, club, country")
+				.select2("competitors", "firstName, lastName, club, country, countryCode")
 				.select("COALESCE(competitors.lastName, '') || ' ' || COALESCE(competitors.firstName, '') AS competitorName")
 				.from("runs")
 				.join("runs.competitorId", "competitors.id")
 				.joinRestricted("runs.relayId", "relays.id", "relays.classId=" QF_IARG(class_id), qfs::QueryBuilder::INNER_JOIN)
 				//.where("runs.relayId IN (" + relay_ids.join(',') + ")")
 				.where("runs.leg>0 AND runs.leg<=" + QString::number(leg_count))
-				.orderBy("runs.relayId, runs.leg");
+				.orderBy("runs.relayId, runs.leg, runs.disqualified, runs.timeMs");
 		q.execThrow(qb.toString());
 		while(q.next()) {
 			if (!q.value("isRunning").toBool())
@@ -293,6 +294,10 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 					Relay &relay = relays[i];
 					int legno = q.value("runs.leg").toInt();
 					Leg &leg = relay.legs[legno - 1];
+					if(leg.runId != 0) {
+						///another runner with better time already assigned
+						break;
+					}
 					leg.fullName = q.value("competitorName").toString();
 					leg.firstName = q.value("firstName").toString();
 					leg.lastName = q.value("lastName").toString();
@@ -305,19 +310,22 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 					leg.org.id = club.first;
 					leg.org.shortName = club.second;
 					leg.country = q.value("competitors.country").toString();
+					leg.countryCode = q.value("competitors.countryCode").toString();
 					break;
 				}
 			}
 		}
 	}
-	for (int legno = 0; legno < leg_count; ++legno) {
+	for (int legno = 1; legno <= leg_count; ++legno) {
 		qfs::QueryBuilder qb;
-		qb.select2("runs", "id, relayId, timeMs," + quickevent::core::RunStatus::runsTableColumns().join(","))
+		qb.select2("runs", "id, relayId, timeMs, disqualified, notCompeting," + quickevent::core::RunStatus::runsTableColumns().join(","))
 				.from("runs")
 				.joinRestricted("runs.relayId", "relays.id",
 								"relays.classId=" QF_IARG(class_id)
-								" AND runs.leg=" QF_IARG(legno + 1)
+								" AND runs.leg=" QF_IARG(legno)
 								" AND runs.isRunning"
+								" AND NOT runs.notCompeting"
+								" AND runs.finishTimeMs>0"
 								, qfs::QueryBuilder::INNER_JOIN)
 				.orderBy("runs.disqualified, runs.timeMs");
 		q.execThrow(qb.toString());
@@ -332,9 +340,10 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 					}
 					int run_id = q.value("runs.id").toInt();
 					Relay &relay = relays[i];
-					Leg &leg = relay.legs[legno];
+					Leg &leg = relay.legs[legno - 1];
 					if(leg.runId != run_id) {
-						qfError() << "internal error, leg:" << legno << "runId check:" << leg.runId << "should equal" << run_id;
+						break;
+						//qfError() << "internal error, leg:" << legno << "runId check:" << leg.runId << "should equal" << run_id;
 					}
 					else {
 						leg.runStatus = quickevent::core::RunStatus::fromQuery(q);
@@ -448,6 +457,7 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 			const Leg &leg = relay.legs[j];
 			int ix2 = tt2.appendRow();
 			qf::core::utils::TreeTableRow tt2_row = tt2.row(ix2);
+			tt2_row.setValue("leg", j + 1);
 			tt2_row.setValue("competitorName", leg.fullName);
 			tt2_row.setValue("firstName", leg.firstName);
 			tt2_row.setValue("lastName", leg.lastName);
@@ -466,6 +476,7 @@ qf::core::utils::TreeTable RelaysPlugin::nLegsClassResultsTable(int class_id, in
 			tt2_row.setValue("orgName", leg.org.name);
 			tt2_row.setValue("orgShortName", leg.org.shortName);
 			tt2_row.setValue("country", leg.country);
+			tt2_row.setValue("countryCode", leg.countryCode);
 			//tt2_row.setValue("courseId", leg.courseId);
 			tt2.setRow(ix2, tt2_row);
 			qfDebug() << '\t' << leg.pos << leg.fullName;
@@ -510,7 +521,7 @@ QVariant RelaysPlugin::startListByClassesTableData(const QString &class_filter)
 	}
 	{
 		qf::core::sql::QueryBuilder qb;
-		qb.select2("competitors", "registration, iofId")
+		qb.select2("competitors", "registration, iofId, country, countryCode")
 			.select("competitors.firstName, competitors.lastName, COALESCE(competitors.lastName, '') || ' ' || COALESCE(competitors.firstName, '') AS competitorName")
 			.select2("runs", "id, leg, siId, startTimeMs")
 			.from("runs")
@@ -657,9 +668,9 @@ QString RelaysPlugin::resultsIofXml30()
 
 			qf::core::utils::TreeTable tt_legs = tt_teams_row.table();
 			for (int k = 0; k < tt_legs.rowCount(); ++k) {
-				int leg = k + 1;
 				QF_TIME_SCOPE("exporting leg: " + QString::number(leg));
 				const qf::core::utils::TreeTableRow tt_leg_row = tt_legs.row(k);
+				int leg = tt_leg_row.value(QStringLiteral("leg")).toInt();
 				auto time = quickevent::core::og::TimeMs::fromVariant(tt_leg_row.value("time"));
 				// omit from export if leg does not exist (rundId == 0) or runner with OK status did not finish yet
 				if (tt_leg_row.value("runId").toInt() == 0) {
@@ -699,6 +710,14 @@ QString RelaysPlugin::resultsIofXml30()
 				auto family = tt_leg_row.value(QStringLiteral("lastName"));
 				auto given = tt_leg_row.value(QStringLiteral("firstName"));
 				append_list(person, QVariantList{"Name", QVariantList{"Family", family}, QVariantList{"Given", given}});
+				QString country_code = tt_leg_row.value(QStringLiteral("countryCode")).toString();
+				if (!country_code.isEmpty()) {
+					append_list(person,
+						QVariantList{"Nationality",
+							QVariantMap{{"code", country_code}},
+							tt_leg_row.value(QStringLiteral("country"))
+						});
+				}
 				append_list(member_result, person);
 
 				QString club_name = tt_leg_row.value(QStringLiteral("orgName")).toString();
@@ -726,8 +745,8 @@ QString RelaysPlugin::resultsIofXml30()
 				}
 
 				QVariantList person_result{"Result"};
-				append_list(person_result, QVariantList{"Leg", k+1 } );
-				append_list(person_result, QVariantList{"BibNumber", QString::number(relay_number) + '.' + QString::number(k+1)});
+				append_list(person_result, QVariantList{"Leg", leg} );
+				append_list(person_result, QVariantList{"BibNumber", QString::number(relay_number) + '.' + QString::number(leg)});
 				int run_id = tt_leg_row.value(QStringLiteral("runId")).toInt();
 				int stime = 0, ftime = 0, time_msec = 0, siId = 0;
 				if(run_id > 0) {
@@ -942,9 +961,9 @@ QString RelaysPlugin::startListIofXml30()
 
 			qf::core::utils::TreeTable tt_legs = tt_teams_row.table();
 			for (int k = 0; k < tt_legs.rowCount(); ++k) {
-				int leg = k + 1;
-				QF_TIME_SCOPE("exporting leg: " + QString::number(leg));
 				const qf::core::utils::TreeTableRow tt_leg_row = tt_legs.row(k);
+				int leg = tt_leg_row.value(QStringLiteral("leg")).toInt();
+				QF_TIME_SCOPE("exporting leg: " + QString::number(leg));
 				QVariantList member_start{"TeamMemberStart"};
 				QVariantList person{"Person"};
 				if (!is_iof_race)
@@ -956,11 +975,19 @@ QString RelaysPlugin::startListIofXml30()
 				auto family = tt_leg_row.value(QStringLiteral("lastName"));
 				auto given = tt_leg_row.value(QStringLiteral("firstName"));
 				append_list(person, QVariantList{"Name", QVariantList{"Family", family}, QVariantList{"Given", given}});
+				QString country_code = tt_leg_row.value(QStringLiteral("countryCode")).toString();
+				if (!country_code.isEmpty()) {
+					append_list(person,
+						QVariantList{"Nationality",
+							QVariantMap{{"code", country_code}},
+							tt_leg_row.value(QStringLiteral("country"))
+						});
+				}
 				append_list(member_start, person);
 
 				QVariantList start{"Start"};
-				append_list(start, QVariantList{"Leg", k+1 } );
-				append_list(start, QVariantList{"BibNumber", QString::number(relay_number) + '.' + QString::number(k+1)});
+				append_list(start, QVariantList{"Leg", leg} );
+				append_list(start, QVariantList{"BibNumber", QString::number(relay_number) + '.' + QString::number(leg)});
 				append_list(start, QVariantList{"StartTime", datetime_to_string(start00.addMSecs(tt_leg_row.value(QStringLiteral("runs.startTimeMs")).toInt()))});
 				if (!is_iof_race)
 				{
