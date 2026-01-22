@@ -33,7 +33,7 @@ jobs:
   
     - name: Get AppImageTool
       run: |
-        curl --silent "https://api.github.com/repos/AppImage/AppImageKit/releases/latest" | jq -r '.assets[] | select(.name == "appimagetool-x86_64.AppImage").browser_download_url' | sudo xargs curl -L -o /opt/appimagetool-x86_64.AppImage --create-dirs --url
+        curl --silent "https://api.github.com/repos/AppImage/appimagetool/releases/latest" | jq -r '.assets[] | select(.name == "appimagetool-x86_64.AppImage").browser_download_url' | sudo xargs curl -L -o /opt/appimagetool-x86_64.AppImage --create-dirs --url
         sudo chmod +x /opt/appimagetool-x86_64.AppImage
 
     - name: Build AppImage
