@@ -205,6 +205,8 @@ bool XmlImporter::importEntries(QXmlStreamReader &reader, const XmlCreators crea
 						doc.setSiid(person.siNumber);
 					doc.setValue("firstName", person.nameGiven);
 					doc.setValue("lastName", person.nameFamily);
+					doc.setValue("country", person.nationalityName);
+					doc.setValue("countryCode", person.nationalityCode);
 					if (creator == XmlCreators::Oris) {
 						doc.setValue("registration", person.regCz);
 						doc.setValue("note", person.noteOris);
@@ -225,7 +227,6 @@ bool XmlImporter::importEntries(QXmlStreamReader &reader, const XmlCreators crea
 							else if (!person.countryName.isEmpty())
 								doc.setValue("club",person.countryName);
 						}
-						doc.setValue("country",person.nationalityName);
 						if (person.iofId.has_value())
 							doc.setValue("importId",person.iofId.value());
 					}
@@ -359,6 +360,7 @@ bool XmlImporter::importEntries(QXmlStreamReader &reader, const XmlCreators crea
 							doc.setValue("club",leg.second.countryName);
 					}
 					doc.setValue("country",leg.second.nationalityName);
+					doc.setValue("countryCode",leg.second.nationalityCode);
 					if (leg.second.iofId.has_value())
 						doc.setValue("importId",leg.second.iofId.value());
 					if (leg.second.iofId.has_value())
@@ -672,7 +674,7 @@ bool XmlImporter::importRegistration(QXmlStreamReader &reader, const XmlCreators
 	}
 	qf::core::sql::Transaction transaction;
 	q.exec("DELETE FROM registrations", qf::core::Exception::Throw);
-	q.prepare("INSERT INTO registrations (firstName, lastName, registration, licence, clubAbbr, country, siId, importId) VALUES (:firstName, :lastName, :registration, :licence, :clubAbbr, :country, :siId, :importId)", qf::core::Exception::Throw);
+	q.prepare("INSERT INTO registrations (firstName, lastName, registration, licence, clubAbbr, country, countryCode, siId, importId) VALUES (:firstName, :lastName, :registration, :licence, :clubAbbr, :country, :countryCode, :siId, :importId)", qf::core::Exception::Throw);
 	// load data from XML
 	int items_processed = 0;
 	while(reader.readNextStartElement()) {
@@ -704,7 +706,8 @@ bool XmlImporter::importRegistration(QXmlStreamReader &reader, const XmlCreators
 					else
 						q.bindValue(":importId", 0);
 				}
-				q.bindValue(":country",person.nationalityCode);
+				q.bindValue(":country", person.nationalityName);
+				q.bindValue(":countryCode", person.nationalityCode);
 				q.exec(qf::core::Exception::Throw);
 				items_processed++;
 			}
